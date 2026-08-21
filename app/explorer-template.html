@@ -615,10 +615,18 @@ function abaOpts(){
   if(sil.length) h += '<optgroup label="No returns on record ('+sil.length+')">' + opts(sil) + '</optgroup>';
   return h;
 }
+/* "all nine provinces" was a written-out word. The nine comes from the
+   register, so it is counted rather than asserted - if the province list
+   ever changes the sentence follows it instead of quietly lying. */
+function numWord(n){
+  var w = ['no','one','two','three','four','five','six','seven','eight',
+           'nine','ten','eleven','twelve'];
+  return w[n] || String(n);
+}
 function scopeLine(){
   var bits = [];
   bits.push(ui.p0===ui.p1 ? perPretty(ui.p0) : perPretty(ui.p0) + ' to ' + perPretty(ui.p1));
-  bits.push(ui.aba >= 0 ? abaName(ui.aba) : (ui.prov >= 0 ? D.prov[ui.prov] : 'all nine provinces'));
+  bits.push(ui.aba >= 0 ? abaName(ui.aba) : (ui.prov >= 0 ? D.prov[ui.prov] : 'all ' + numWord(D.prov.length) + ' provinces'));
   bits.push(ui.spec >= 0 ? D.spec[ui.spec] : 'all species');
   if(ui.tab==='dis') bits.push(ui.dis >= 0 ? D.item[ui.dis] : 'all diseases');
   return bits.join(' · ');

@@ -21,7 +21,7 @@
  */
 import { sql, query, raw, D } from '../db.js';
 import { hashPassword, verifyPassword, needsRehash, generateTempPassword } from './passwords.js';
-import { provinceOfRc, isProvince } from '../rc.js';
+import { provinceOfRc, isProvince, PROVINCES } from '../rc.js';
 
 export const ROLES = ['user', 'admin', 'super'];
 
@@ -290,7 +290,14 @@ export const canManageRegister = (u) => Boolean(u) && u.role === 'super';
 /* A one-line description of what this person can reach, for the header. */
 export function scopeLabel(user) {
   if (!user) return '';
-  if (user.role === 'super') return 'National — all nine provinces';
+  /* Counted from the province list the RC numbering defines, not written out
+   * as a word. One place decides how many provinces there are. */
+  if (user.role === 'super') {
+    const words = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+                   'eight', 'nine', 'ten', 'eleven', 'twelve'];
+    const n = PROVINCES.length;
+    return `National — all ${words[n] || n} provinces`;
+  }
   if (user.role === 'admin') return `${user.scopeProvince} — every abattoir in the province`;
   return 'One abattoir';
 }

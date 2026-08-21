@@ -10,6 +10,7 @@
  */
 import { query, sql, db } from '../db.js';
 import { config } from '../config.js';
+import { ensureSettingsTables } from '../settings.js';
 
 const DATA = () => config.databases.data;
 const ARMS = 'arms';
@@ -263,6 +264,11 @@ WHERE TABLE_SCHEMA = ${target} AND TABLE_NAME = ${table}`;
     }
     await createIndex(target, table, name, definition, log);
   }
+
+  /* The tunables live in the database so they can be changed without a deploy.
+   * Seeded from whatever is in force right now, so the first run records the
+   * current behaviour rather than inventing new defaults. */
+  await ensureSettingsTables(log);
 
   await handleLegacyTrigger(log);
 

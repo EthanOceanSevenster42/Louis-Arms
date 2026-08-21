@@ -21,6 +21,7 @@ import cookieParser from 'cookie-parser';
 import fs from 'node:fs';
 
 import { config, baseUrl, validateConfig } from './config.js';
+import { loadSettings } from './settings.js';
 import { getPool, query, D, closePool } from './db.js';
 import { getExplorerPayload, clearCache, cacheStatus } from './explorer-data.js';
 import { getFormDefinition, clearFormCache } from './form-definition.js';
@@ -367,11 +368,19 @@ function start() {
   }
 
   const server = app.listen(config.http.port, config.http.host, async () => {
+    /* Tunables come from arms.Setting, overlaying .env. Done here rather than at
+     * import time because it needs the database, and the server should still
+     * come up and say why if the database is unreachable. */
+    const applied = await loadSettings({ log: (m) => console.log(m) });
+
     const b = baseUrl();
     console.log('');
     console.log('  ARMS backend');
     console.log(`  reading ${config.databases.data}, ${config.databases.registry}, ${config.databases.forms} on ${config.sql.server}`);
     console.log(`  ARMS starts at ${config.arms.fromYear}`);
+    if (applied.length) {
+      console.log(`  settings from the database: ${applied.join(' · ')}`);
+    }
 
     try {
       const n = await countUsers();
