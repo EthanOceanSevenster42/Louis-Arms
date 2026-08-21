@@ -239,7 +239,7 @@ export async function migrate({ log = console.log } = {}) {
   const widened = await widenItemColumn();
   if (widened.absent) {
     log('    ' + config.databases.data + ' is empty - the recovered data has not been restored yet.');
-    log('    FDI_Item cannot be widened until it exists. ARMS's own tables are still created,');
+    log("    FDI_Item cannot be widened until it exists. ARMS's own tables are still created,");
     log('    so run this again after loading the data and before any capture.');
   } else {
     log(widened.changed
