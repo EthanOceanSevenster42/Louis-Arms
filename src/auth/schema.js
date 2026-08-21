@@ -53,7 +53,17 @@ SELECT CHARACTER_MAXIMUM_LENGTH AS len, IS_NULLABLE AS nullable, COLUMN_TYPE AS 
 FROM information_schema.COLUMNS
 WHERE TABLE_SCHEMA = ${DATA()} AND TABLE_NAME = 'FormDataItems' AND COLUMN_NAME = 'FDI_Item'`;
 
-  if (!col) throw new Error('FormDataItems.FDI_Item not found - is DB_DATA the right database?');
+  if (!col) {
+    /* The column is missing. That is either a staged deployment where the
+     * recovered data has not been restored yet, or DB_DATA pointing at the
+     * wrong database - and those need opposite responses, so tell them apart
+     * rather than guessing. An empty database is the first; a database full of
+     * other people's tables is the second. */
+    const [any] = await sql`
+SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = ${DATA()}`;
+    if (Number(any?.n || 0) === 0) return { changed: false, from: null, absent: true };
+    throw new Error('FormDataItems.FDI_Item not found - is DB_DATA the right database?');
+  }
   const len = col.len === null ? -1 : Number(col.len);
   if (len >= 100 || len === -1) return { changed: false, from: len };
 
@@ -227,9 +237,15 @@ export async function migrate({ log = console.log } = {}) {
   log('  migrating the data database...');
 
   const widened = await widenItemColumn();
-  log(widened.changed
-    ? `    FDI_Item widened from varchar(${widened.from}) to varchar(100) — PRRS is 52 characters`
-    : `    FDI_Item already wide enough (${widened.from === -1 ? 'max' : widened.from})`);
+  if (widened.absent) {
+    log('    ' + config.databases.data + ' is empty - the recovered data has not been restored yet.');
+    log('    FDI_Item cannot be widened until it exists. ARMS's own tables are still created,');
+    log('    so run this again after loading the data and before any capture.');
+  } else {
+    log(widened.changed
+      ? `    FDI_Item widened from varchar(${widened.from}) to varchar(100) — PRRS is 52 characters`
+      : `    FDI_Item already wide enough (${widened.from === -1 ? 'max' : widened.from})`);
+  }
 
   for (const [label, statement] of STATEMENTS) {
     await query(statement);
@@ -237,7 +253,15 @@ export async function migrate({ log = console.log } = {}) {
   }
 
   for (const [schema, table, name, definition] of INDEXES) {
-    await createIndex(schema ?? DATA(), table, name, definition, log);
+    const target = schema ?? DATA();
+    const [exists] = await sql`
+SELECT COUNT(*) AS n FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = ${target} AND TABLE_NAME = ${table}`;
+    if (Number(exists?.n || 0) === 0) {
+      log(`    skip ${name} - ${target}.${table} does not exist yet`);
+      continue;
+    }
+    await createIndex(target, table, name, definition, log);
   }
 
   await handleLegacyTrigger(log);

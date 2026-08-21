@@ -92,8 +92,10 @@ export async function createUser({
   const problems = [];
 
   const uname = String(username || '').trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(uname)) {
-    problems.push('username must be 3-64 characters: letters, digits, dot, dash or underscore');
+  /* An e-mail address is a perfectly ordinary username and is what FSA uses,
+   * so '@' and '+' are allowed alongside the original set. */
+  if (!/^[a-z0-9][a-z0-9._@+-]{2,63}$/.test(uname)) {
+    problems.push('username must be 3-64 characters: letters, digits, dot, dash, underscore, @ or +');
   }
   if (!String(fullName || '').trim()) {
     problems.push('a full name is required — an approval must be attributable to a person');

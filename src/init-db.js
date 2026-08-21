@@ -2,6 +2,7 @@
  *
  *   npm run init-db
  *   npm run init-db -- --username louis --name "Louis Visagie"
+ *   npm run init-db -- --username x@y.co.za --name "X Y" --password '...'
  *
  * Safe to run again. The tables are created only if absent, and a super user
  * is created only if no account exists at all - so this cannot be used to
@@ -38,9 +39,15 @@ async function main() {
 
   const username = arg('username', 'super');
   const fullName = arg('name', 'ARMS Super User');
+  const email = arg('email', null);
+  /* A password may be supplied for a handover account. Left off, one is
+   * generated and printed once, which is the safer default. Either way the
+   * account must change it at first sign-in. */
+  const password = arg('password', null);
 
   const { user, temporaryPassword } = await createUser({
-    username, fullName, role: 'super', createdBy: 'init-db', mustChangePassword: true,
+    username, fullName, email, password,
+    role: 'super', createdBy: 'init-db', mustChangePassword: true,
   });
 
   await audit({
@@ -50,7 +57,7 @@ async function main() {
 
   console.log('\n  First super user created.\n');
   console.log(`    username            ${user.username}`);
-  console.log(`    temporary password  ${temporaryPassword}`);
+  console.log(`    temporary password  ${temporaryPassword ?? '(the one supplied on the command line)'}`);
   console.log('\n  Write it down now — it is stored only as a hash and cannot be shown again.');
   console.log('  It must be changed at first sign-in.\n');
   console.log('  Then: npm start\n');
