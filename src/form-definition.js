@@ -94,25 +94,33 @@ ORDER BY g.GRP_Order, i.ITM_Order`);
 async function abattoirs() {
   const months = config.arms.abattoirWindowMonths;
 
+  /* The SQL Server original declared @latest and @cut as local variables. MySQL
+   * has no DECLARE outside a stored program, so the cut-off is computed inline
+   * as a scalar subquery - same value, one statement.
+   *
+   * STUFF(... FOR XML PATH('')) was the T-SQL way to concatenate the species
+   * per abattoir; MySQL says that directly with GROUP_CONCAT. Note that
+   * GROUP_CONCAT truncates at group_concat_max_len (1024 by default) - a
+   * species list is a handful of short words, so it is nowhere near that, but
+   * a silent truncation is the sort of thing worth naming rather than meeting
+   * later. */
   const rows = await query(`
-DECLARE @latest date = (SELECT MAX(FRMD_StartDate) FROM ${D.data('FormData')} WHERE FRMD_Status='Approved');
-DECLARE @cut date = DATEADD(month, -${months}, @latest);
-
 SELECT o.ORG_ID,
        o.ORG_Name,
-       LTRIM(RTRIM(ISNULL(a.ABA_RegistrationNumber,''))) AS RC,
-       STUFF((SELECT ',' + v.SPC_Name
-                FROM ${D.registry('vw_AbattoirSpecies')} v
-               WHERE v.ORG_ID = o.ORG_ID
-               ORDER BY v.SPC_Name
-                 FOR XML PATH('')), 1, 1, '') AS Species
+       TRIM(IFNULL(a.ABA_RegistrationNumber,'')) AS RC,
+       (SELECT GROUP_CONCAT(v.SPC_Name ORDER BY v.SPC_Name SEPARATOR ',')
+          FROM ${D.registry('vw_AbattoirSpecies')} v
+         WHERE v.ORG_ID = o.ORG_ID) AS Species
 FROM ${D.registry('Organisation')} o
 JOIN ${D.registry('AbattoirMaster')} a ON a.ORG_ID = o.ORG_ID
 WHERE o.ORG_Active = 1
   AND EXISTS (SELECT 1 FROM ${D.data('FormData')} f
                WHERE f.ORG_ID = o.ORG_ID
                  AND f.FRMD_Status = 'Approved'
-                 AND f.FRMD_StartDate >= @cut)
+                 AND f.FRMD_StartDate >= (
+                     SELECT DATE_SUB(MAX(FRMD_StartDate), INTERVAL ${months} MONTH)
+                       FROM ${D.data('FormData')}
+                      WHERE FRMD_Status = 'Approved'))
 ORDER BY o.ORG_Name`);
 
   return {

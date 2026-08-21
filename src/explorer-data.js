@@ -19,7 +19,7 @@
  *                                           why they are split)
  *   Only FRMD_Status = 'Approved' is counted, matching every original report.
  */
-import { query, D, db } from './db.js';
+import { query, D, db, tryDecimal } from './db.js';
 import { config } from './config.js';
 import { loadDiseaseMap, makeCanonicaliser } from './disease-map.js';
 /* The RC province/type maps live in rc.js because an admin user's authority is
@@ -63,21 +63,28 @@ function registerSql(fromYear) {
   const aba = D.registry('AbattoirMaster');
   const reg = D.registry('Regions');
   const formData = D.data('FormData');
-  const getProvince = `${db(config.databases.registry)}.dbo.GetProvince`;
+  /* SQL Server had a scalar function NAHDIS_FSA.dbo.GetProvince(REG_ID) whose
+   * body lives inside the .bak and did not come across with the data. Rather
+   * than guess at it in a way that would be silently wrong, the expression is
+   * configurable: set ARMS_PROVINCE_EXPR once the original is transcribed.
+   * The default reads the region name, which is close but not authoritative -
+   * this feeds the explorer's Prov facet only. Access scope does NOT use it;
+   * that comes from AppUser.ScopeProvince and the RC number, in scope.js. */
+  const provinceExpr = config.arms.provinceExpr;
 
   return `
 SELECT o.ORG_ID,
        o.ORG_Name AS Nm,
        LTRIM(RTRIM(a.ABA_RegistrationNumber)) AS RC,
-       LTRIM(RTRIM(ISNULL(NULLIF(${getProvince}(r.REG_ID),''),'Unknown'))) AS Prov,
-       ISNULL(NULLIF(LTRIM(RTRIM(a.ABA_TPCategory)),''),'Unknown') AS TP,
+       TRIM(IFNULL(NULLIF(${provinceExpr},''),'Unknown')) AS Prov,
+       IFNULL(NULLIF(LTRIM(RTRIM(a.ABA_TPCategory)),''),'Unknown') AS TP,
        CASE WHEN o.ORG_AFS = 1 THEN 1 ELSE 0 END AS Afs,
        CASE WHEN o.ORG_Active = 1 THEN 1 ELSE 0 END AS Act,
-       ISNULL(NULLIF(LTRIM(RTRIM(o.ORG_ContactPersonName)),''),'') AS Owner,
-       ISNULL(NULLIF(LTRIM(RTRIM(o.ORG_ContactNumber)),''),'') AS Tel,
-       (SELECT MIN(CONVERT(varchar(7),f.FRMD_StartDate,120)) FROM ${formData} f
+       IFNULL(NULLIF(LTRIM(RTRIM(o.ORG_ContactPersonName)),''),'') AS Owner,
+       IFNULL(NULLIF(LTRIM(RTRIM(o.ORG_ContactNumber)),''),'') AS Tel,
+       (SELECT MIN(DATE_FORMAT(f.FRMD_StartDate, '%Y-%m')) FROM ${formData} f
           WHERE f.ORG_ID=o.ORG_ID AND f.FRMD_Status='Approved') AS FirstRet,
-       (SELECT MAX(CONVERT(varchar(7),f.FRMD_StartDate,120)) FROM ${formData} f
+       (SELECT MAX(DATE_FORMAT(f.FRMD_StartDate, '%Y-%m')) FROM ${formData} f
           WHERE f.ORG_ID=o.ORG_ID AND f.FRMD_Status='Approved') AS LastRet,
        CASE WHEN EXISTS (SELECT 1 FROM ${formData} f
                          WHERE f.ORG_ID = o.ORG_ID AND f.FRMD_Status = 'Approved'
@@ -89,73 +96,76 @@ LEFT JOIN ${reg} r ON r.REG_ID = o.REG_ID
 ORDER BY o.ORG_ID`;
 }
 
-/* TRY_CONVERT rather than CAST: CAST throws the whole query on one bad string,
- * and we would rather count the bad rows and say so than lose the report. */
+/* MySQL has no TRY_CONVERT, and a plain CAST does not throw here - it quietly
+ * returns 0, which would turn an unreadable figure into a real-looking zero.
+ * tryDecimal() guards the cast with a numeric test so a bad value becomes
+ * NULL, and the Bad counters below go on counting them exactly as before. */
 function factQueries(fromYear) {
   const f = D.data('FormData');
   const i = D.data('FormDataItems');
   const p = D.data('FormDataItemParts');
   const approved = `f.FRMD_Status='Approved' AND YEAR(f.FRMD_StartDate) >= ${fromYear}`;
+  const val = tryDecimal('i.FDI_Value');
 
   return {
     sl: {
       label: 'slaughtered (head)',
       sql: `
-SELECT CONVERT(varchar(7), f.FRMD_StartDate, 120) AS Y, f.ORG_ID, i.FDI_Specie AS Sp, '' AS It, '' AS Og,
-       SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) AS V,
-       SUM(CASE WHEN TRY_CONVERT(decimal(18,3), i.FDI_Value) IS NULL THEN 1 ELSE 0 END) AS Bad
+SELECT DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') AS Y, f.ORG_ID, i.FDI_Specie AS Sp, '' AS It, '' AS Og,
+       SUM(${val}) AS V,
+       SUM(CASE WHEN ${val} IS NULL THEN 1 ELSE 0 END) AS Bad
 FROM ${f} f JOIN ${i} i ON i.FRMD_ID = f.FRMD_Id
 WHERE ${approved} AND i.GRP_subID = 6
-GROUP BY CONVERT(varchar(7), f.FRMD_StartDate, 120), f.ORG_ID, i.FDI_Specie
+GROUP BY DATE_FORMAT(f.FRMD_StartDate, '%Y-%m'), f.ORG_ID, i.FDI_Specie
 ORDER BY 1, 2, 3`,
     },
     wc: {
       label: 'whole carcass condemned (head)',
       sql: `
-SELECT CONVERT(varchar(7), f.FRMD_StartDate, 120) AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
-       SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) AS V,
-       SUM(CASE WHEN TRY_CONVERT(decimal(18,3), i.FDI_Value) IS NULL THEN 1 ELSE 0 END) AS Bad
+SELECT DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
+       SUM(${val}) AS V,
+       SUM(CASE WHEN ${val} IS NULL THEN 1 ELSE 0 END) AS Bad
 FROM ${f} f JOIN ${i} i ON i.FRMD_ID = f.FRMD_Id
 WHERE ${approved} AND i.GRP_Id = 1 AND i.GRP_subID <> 15
-GROUP BY CONVERT(varchar(7), f.FRMD_StartDate, 120), f.ORG_ID, i.FDI_Specie, i.FDI_Item
-HAVING SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) > 0
+GROUP BY DATE_FORMAT(f.FRMD_StartDate, '%Y-%m'), f.ORG_ID, i.FDI_Specie, i.FDI_Item
+HAVING SUM(${val}) > 0
 ORDER BY 1, 2, 3, 4`,
     },
     pc: {
       label: 'partially condemned (kg)',
       sql: `
-SELECT CONVERT(varchar(7), f.FRMD_StartDate, 120) AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
-       SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) AS V,
-       SUM(CASE WHEN TRY_CONVERT(decimal(18,3), i.FDI_Value) IS NULL THEN 1 ELSE 0 END) AS Bad
+SELECT DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
+       SUM(${val}) AS V,
+       SUM(CASE WHEN ${val} IS NULL THEN 1 ELSE 0 END) AS Bad
 FROM ${f} f JOIN ${i} i ON i.FRMD_ID = f.FRMD_Id
 WHERE ${approved} AND i.GRP_subID = 15
-GROUP BY CONVERT(varchar(7), f.FRMD_StartDate, 120), f.ORG_ID, i.FDI_Specie, i.FDI_Item
-HAVING SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) > 0
+GROUP BY DATE_FORMAT(f.FRMD_StartDate, '%Y-%m'), f.ORG_ID, i.FDI_Specie, i.FDI_Item
+HAVING SUM(${val}) > 0
 ORDER BY 1, 2, 3, 4`,
     },
     of: {
       label: 'offal condemned (organs)',
       sql: `
-SELECT CONVERT(varchar(7), f.FRMD_StartDate, 120) AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It,
-       p.DIP_Name AS Og, SUM(CAST(p.DIP_Value AS bigint)) AS V, 0 AS Bad
+SELECT DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It,
+       p.DIP_Name AS Og, SUM(CAST(p.DIP_Value AS SIGNED)) AS V, 0 AS Bad
 FROM ${f} f
 JOIN ${i} i ON i.FRMD_ID = f.FRMD_Id
 JOIN ${p} p ON p.FDI_ID = i.FDI_Id
 WHERE ${approved}
-GROUP BY CONVERT(varchar(7), f.FRMD_StartDate, 120), f.ORG_ID, i.FDI_Specie, i.FDI_Item, p.DIP_Name
-HAVING SUM(CAST(p.DIP_Value AS bigint)) > 0
+GROUP BY DATE_FORMAT(f.FRMD_StartDate, '%Y-%m'), f.ORG_ID, i.FDI_Specie, i.FDI_Item, p.DIP_Name
+HAVING SUM(CAST(p.DIP_Value AS SIGNED)) > 0
 ORDER BY 1, 2, 3, 4, 5`,
     },
     lr: {
       label: 'lairage losses (animals)',
       sql: `
-SELECT CONVERT(varchar(7), f.FRMD_StartDate, 120) AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
-       SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) AS V,
-       SUM(CASE WHEN TRY_CONVERT(decimal(18,3), i.FDI_Value) IS NULL THEN 1 ELSE 0 END) AS Bad
+SELECT DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') AS Y, f.ORG_ID, i.FDI_Specie AS Sp, i.FDI_Item AS It, '' AS Og,
+       SUM(${val}) AS V,
+       SUM(CASE WHEN ${val} IS NULL THEN 1 ELSE 0 END) AS Bad
 FROM ${f} f JOIN ${i} i ON i.FRMD_ID = f.FRMD_Id
 WHERE ${approved} AND i.GRP_Id = 2
-GROUP BY CONVERT(varchar(7), f.FRMD_StartDate, 120), f.ORG_ID, i.FDI_Specie, i.FDI_Item
-HAVING SUM(TRY_CONVERT(decimal(18,3), i.FDI_Value)) > 0
+GROUP BY DATE_FORMAT(f.FRMD_StartDate, '%Y-%m'), f.ORG_ID, i.FDI_Specie, i.FDI_Item
+HAVING SUM(${val}) > 0
 ORDER BY 1, 2, 3, 4`,
     },
   };
@@ -310,12 +320,12 @@ export async function buildExplorerPayload() {
    * 1 = in progress, 2 = submitted and awaiting approval, 3 = approved. */
   console.log('  reading the submission log (all statuses)...');
   const subSql = `
-SELECT CONVERT(varchar(7), FRMD_StartDate, 120) AS Y, ORG_ID,
+SELECT DATE_FORMAT(FRMD_StartDate, '%Y-%m') AS Y, ORG_ID,
        MAX(CASE FRMD_Status WHEN 'Approved' THEN 3 WHEN 'Submitted' THEN 2 ELSE 1 END) AS St,
        COUNT(*) AS N
 FROM ${D.data('FormData')}
 WHERE YEAR(FRMD_StartDate) >= ${fromYear}
-GROUP BY CONVERT(varchar(7), FRMD_StartDate, 120), ORG_ID
+GROUP BY DATE_FORMAT(FRMD_StartDate, '%Y-%m'), ORG_ID
 ORDER BY 1, 2`;
 
   const subRows = [];

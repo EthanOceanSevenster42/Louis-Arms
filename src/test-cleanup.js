@@ -46,8 +46,8 @@ export async function cleanupTestData({ usernames = [], frmdIds = [], prefix = n
       /* Refuse anything that is not demonstrably the test's own work. */
       const [row] = await t.sql`
 SELECT FRMD_Id, FRMD_UserName, ORG_ID, FRMD_Status,
-       CONVERT(varchar(7), FRMD_StartDate, 120) AS Period
-FROM dbo.FormData WHERE FRMD_Id = ${id}`;
+       DATE_FORMAT(FRMD_StartDate, '%Y-%m') AS Period
+FROM FormData WHERE FRMD_Id = ${id}`;
       if (!row) continue;
       if (!captured.has(String(row.FRMD_UserName))) {
         out.kept.push(`${id} (captured by ${row.FRMD_UserName}, not a test account)`);
@@ -57,9 +57,9 @@ FROM dbo.FormData WHERE FRMD_Id = ${id}`;
       /* Every revision of that abattoir-month written by a test account,
        * including the one this call superseded. */
       const family = await t.sql`
-SELECT FRMD_Id, FRMD_UserName FROM dbo.FormData
+SELECT FRMD_Id, FRMD_UserName FROM FormData
 WHERE ORG_ID = ${Number(row.ORG_ID)}
-  AND CONVERT(varchar(7), FRMD_StartDate, 120) = ${String(row.Period)}`;
+  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${String(row.Period)}`;
 
       for (const f of family) {
         if (!captured.has(String(f.FRMD_UserName))) {
@@ -68,14 +68,14 @@ WHERE ORG_ID = ${Number(row.ORG_ID)}
         }
         const fid = Number(f.FRMD_Id);
         const [p] = await t.sql`
-SELECT COUNT(*) AS n FROM dbo.FormDataItemParts p
-JOIN dbo.FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
-        const [i] = await t.sql`SELECT COUNT(*) AS n FROM dbo.FormDataItems WHERE FRMD_ID = ${fid}`;
+SELECT COUNT(*) AS n FROM FormDataItemParts p
+JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
+        const [i] = await t.sql`SELECT COUNT(*) AS n FROM FormDataItems WHERE FRMD_ID = ${fid}`;
 
-        await t.sql`DELETE p FROM dbo.FormDataItemParts p
-                    JOIN dbo.FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
-        await t.sql`DELETE FROM dbo.FormDataItems WHERE FRMD_ID = ${fid}`;
-        await t.sql`DELETE FROM dbo.FormData WHERE FRMD_Id = ${fid}`;
+        await t.sql`DELETE p FROM FormDataItemParts p
+                    JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
+        await t.sql`DELETE FROM FormDataItems WHERE FRMD_ID = ${fid}`;
+        await t.sql`DELETE FROM FormData WHERE FRMD_Id = ${fid}`;
 
         out.parts += Number(p.n);
         out.items += Number(i.n);
@@ -86,8 +86,8 @@ JOIN dbo.FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
     for (const n of names) {
       await t.sql`DELETE s FROM arms.Session s
                   JOIN arms.AppUser u ON u.UserId = s.UserId WHERE u.Username = ${n}`;
-      const [d] = await t.sql`DELETE FROM arms.AppUser WHERE Username = ${n}; SELECT @@ROWCOUNT AS n`;
-      out.accounts += Number(d?.n || 0);
+      const d = await t.run`DELETE FROM arms.AppUser WHERE Username = ${n}`;
+      out.accounts += d.affectedRows;
     }
   });
 
@@ -109,7 +109,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const names = accounts.map((a) => String(a.FullName));
     /* Every return captured under a test account's name. */
     const rows = await query(`
-SELECT FRMD_Id FROM dbo.FormData
+SELECT FRMD_Id FROM FormData
 WHERE FRMD_UserName IN (${names.map((n) => `'${n.replace(/'/g, "''")}'`).join(',') || "''"})`);
 
     console.log(`\n  Clearing ${accounts.length} test account(s) and ${rows.length} return(s) they captured.\n`);

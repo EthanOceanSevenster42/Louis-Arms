@@ -181,7 +181,7 @@ export async function authenticate(username, password) {
     if (lock) {
       await sql`UPDATE arms.AppUser
                    SET FailedAttempts = ${attempts},
-                       LockedUntil = DATEADD(minute, ${LOCK_MINUTES}, SYSUTCDATETIME())
+                       LockedUntil = DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${LOCK_MINUTES} MINUTE)
                  WHERE UserId = ${user.userId}`;
     } else {
       await sql`UPDATE arms.AppUser SET FailedAttempts = ${attempts}, LockedUntil = NULL
@@ -200,11 +200,11 @@ export async function authenticate(username, password) {
     const fresh = await hashPassword(String(password));
     await sql`UPDATE arms.AppUser
                  SET PasswordHash = ${fresh}, FailedAttempts = 0, LockedUntil = NULL,
-                     LastLoginAt = SYSUTCDATETIME()
+                     LastLoginAt = UTC_TIMESTAMP()
                WHERE UserId = ${user.userId}`;
   } else {
     await sql`UPDATE arms.AppUser
-                 SET FailedAttempts = 0, LockedUntil = NULL, LastLoginAt = SYSUTCDATETIME()
+                 SET FailedAttempts = 0, LockedUntil = NULL, LastLoginAt = UTC_TIMESTAMP()
                WHERE UserId = ${user.userId}`;
   }
 

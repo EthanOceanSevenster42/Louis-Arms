@@ -45,10 +45,12 @@ VALUES (${user?.userId ?? null}, ${user?.username ?? null}, ${String(action)},
 
 export async function recentAudit({ limit = 200, userId = null } = {}) {
   const rows = userId
-    ? await sql`SELECT TOP (${Number(limit)}) AuditId, At, UserId, Username, Action, EntityType, EntityId, Detail, IpAddress
-                  FROM arms.AuditLog WHERE UserId = ${Number(userId)} ORDER BY At DESC, AuditId DESC`
-    : await sql`SELECT TOP (${Number(limit)}) AuditId, At, UserId, Username, Action, EntityType, EntityId, Detail, IpAddress
-                  FROM arms.AuditLog ORDER BY At DESC, AuditId DESC`;
+    ? await sql`SELECT AuditId, At, UserId, Username, Action, EntityType, EntityId, Detail, IpAddress
+                  FROM arms.AuditLog WHERE UserId = ${Number(userId)} ORDER BY At DESC, AuditId DESC
+                  LIMIT ${Number(limit)}`
+    : await sql`SELECT AuditId, At, UserId, Username, Action, EntityType, EntityId, Detail, IpAddress
+                  FROM arms.AuditLog ORDER BY At DESC, AuditId DESC
+                  LIMIT ${Number(limit)}`;
 
   return rows.map((r) => ({
     auditId: Number(r.AuditId),

@@ -7,7 +7,7 @@
  * to mean now, not in eight hours.
  */
 import crypto from 'node:crypto';
-import { sql, query } from '../db.js';
+import { sql, query, run } from '../db.js';
 import { findById } from './users.js';
 
 export const COOKIE_NAME = 'arms_session';
@@ -21,7 +21,7 @@ export async function createSession(userId, { hours = 8, ip = null, userAgent = 
   await sql`
 INSERT INTO arms.Session (TokenHash, UserId, ExpiresAt, IpAddress, UserAgent)
 VALUES (${hashToken(token)}, ${Number(userId)},
-        DATEADD(hour, ${Number(hours)}, SYSUTCDATETIME()),
+        DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${Number(hours)} HOUR),
         ${ip}, ${userAgent ? String(userAgent).slice(0, 300) : null})`;
 
   return { token, expiresInMs: hours * 3600 * 1000 };
@@ -37,7 +37,7 @@ SELECT SessionId, UserId
 FROM arms.Session
 WHERE TokenHash = ${hashToken(token)}
   AND RevokedAt IS NULL
-  AND ExpiresAt > SYSUTCDATETIME()`;
+  AND ExpiresAt > UTC_TIMESTAMP()`;
 
   if (!rows.length) return null;
 
@@ -49,27 +49,27 @@ WHERE TokenHash = ${hashToken(token)}
     return null;
   }
 
-  await sql`UPDATE arms.Session SET LastSeenAt = SYSUTCDATETIME() WHERE SessionId = ${rows[0].SessionId}`;
+  await sql`UPDATE arms.Session SET LastSeenAt = UTC_TIMESTAMP() WHERE SessionId = ${rows[0].SessionId}`;
   return { ...user, sessionId: Number(rows[0].SessionId) };
 }
 
 export async function revokeSession(token) {
   if (!token) return;
-  await sql`UPDATE arms.Session SET RevokedAt = SYSUTCDATETIME()
+  await sql`UPDATE arms.Session SET RevokedAt = UTC_TIMESTAMP()
              WHERE TokenHash = ${hashToken(token)} AND RevokedAt IS NULL`;
 }
 
 /* Used when an account is disabled or its password is reset - every device
  * that person is signed in on stops at once. */
 export async function revokeAllForUser(userId) {
-  await sql`UPDATE arms.Session SET RevokedAt = SYSUTCDATETIME()
+  await sql`UPDATE arms.Session SET RevokedAt = UTC_TIMESTAMP()
              WHERE UserId = ${Number(userId)} AND RevokedAt IS NULL`;
 }
 
 export async function activeSessionCount(userId) {
   const [r] = await sql`
 SELECT COUNT(*) AS n FROM arms.Session
-WHERE UserId = ${Number(userId)} AND RevokedAt IS NULL AND ExpiresAt > SYSUTCDATETIME()`;
+WHERE UserId = ${Number(userId)} AND RevokedAt IS NULL AND ExpiresAt > UTC_TIMESTAMP()`;
   return Number(r.n);
 }
 
@@ -77,9 +77,8 @@ WHERE UserId = ${Number(userId)} AND RevokedAt IS NULL AND ExpiresAt > SYSUTCDAT
  * timer by the server. The audit trail lives in arms.AuditLog, not here, so
  * removing a long-dead session loses nothing. */
 export async function purgeExpiredSessions({ olderThanDays = 30 } = {}) {
-  const rows = await sql`
+  const { affectedRows } = await run`
 DELETE FROM arms.Session
-WHERE ExpiresAt < DATEADD(day, -${Number(olderThanDays)}, SYSUTCDATETIME());
-SELECT @@ROWCOUNT AS n`;
-  return Number(rows[0]?.n || 0);
+WHERE ExpiresAt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL ${Number(olderThanDays)} DAY)`;
+  return affectedRows;
 }

@@ -2,7 +2,7 @@
   "name": "arms-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Node backend for ARMS - serves the two applications in '1 - The system' over HTTP, with every value read live from the SQL Server databases in '3 - The database'.",
+  "description": "Node backend for ARMS - serves the two applications in '1 - The system' over HTTP, with every value read live from the MySQL databases in '3 - The database'.",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
@@ -20,6 +20,6 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "mssql": "^11.0.1"
+    "mysql2": "^3.11.5"
   }
 }

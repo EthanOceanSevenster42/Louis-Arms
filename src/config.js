@@ -79,8 +79,6 @@ function resolvePath(name, candidates) {
   return path.resolve(backendRoot, list[list.length - 1]);
 }
 
-const auth = opt('SQL_AUTH', 'sql').toLowerCase();
-
 export const config = {
   backendRoot,
 
@@ -102,18 +100,19 @@ export const config = {
     sessionHours: int('SESSION_HOURS', 8),
   },
 
+  /* MySQL. There is no named-instance or integrated-security case here: a
+   * MySQL server is a host and a port, and the login is always a MySQL user. */
   sql: {
     server: req('SQL_SERVER'),
-    port: int('SQL_PORT', 1433),
-    /* A named instance (\SQLEXPRESS) is reached through the SQL Browser service
-     * rather than a fixed port. Set SQL_INSTANCE and leave SQL_PORT empty for
-     * that case; set SQL_PORT and leave SQL_INSTANCE empty for a default
-     * instance. Both are honoured, neither is assumed. */
-    instance: opt('SQL_INSTANCE', ''),
-    auth,
-    user: auth === 'sql' ? req('SQL_USER') : opt('SQL_USER', ''),
-    password: auth === 'sql' ? req('SQL_PASSWORD') : opt('SQL_PASSWORD', ''),
+    port: int('SQL_PORT', 3306),
+    user: req('SQL_USER'),
+    password: req('SQL_PASSWORD'),
+    /* TLS to the database. On by default; a MySQL that is not on this machine
+     * is carrying condemnation detail across a network. */
     encrypt: bool('SQL_ENCRYPT', true),
+    /* Accept a self-signed server certificate. True is right for a local or
+     * private-network MySQL using its own generated certificate; set it false
+     * once the server presents one your CA store trusts. */
     trustServerCertificate: bool('SQL_TRUST_CERT', true),
     requestTimeout: int('SQL_TIMEOUT_MS', 900000),
     poolMax: int('SQL_POOL_MAX', 10),
@@ -145,6 +144,12 @@ export const config = {
      * hardcodes NAHDIS_FSA..regions and therefore breaks or misfires whenever
      * the registry database is not called exactly that. 'leave' or 'disable' -
      * see the long note in auth/schema.js. */
+    /* SQL Server's NAHDIS_FSA.dbo.GetProvince(REG_ID) did not survive the move
+     * to MySQL - its body is inside the .bak. This is the SQL expression that
+     * yields an abattoir's province in the register query, so it can be
+     * corrected in .env once the original function is transcribed. Display
+     * only: access scope comes from AppUser.ScopeProvince, not from this. */
+    provinceExpr: opt('ARMS_PROVINCE_EXPR', 'r.REG_Name'),
     legacyNotifyTrigger: opt('LEGACY_NOTIFY_TRIGGER', 'leave').toLowerCase(),
     /* Building the explorer payload aggregates roughly 150k rows into 60k.
      * That is a few seconds of SQL, so the result is cached. Set to 0 to
@@ -183,10 +188,6 @@ export function baseUrl() {
 
 export function validateConfig() {
   const problems = [...missing];
-
-  if (!['sql', 'windows'].includes(config.sql.auth)) {
-    problems.push(`SQL_AUTH must be "sql" or "windows", got "${config.sql.auth}"`);
-  }
 
   if (!['leave', 'disable'].includes(config.arms.legacyNotifyTrigger)) {
     problems.push(`LEGACY_NOTIFY_TRIGGER must be "leave" or "disable", got "${config.arms.legacyNotifyTrigger}"`);

@@ -141,14 +141,14 @@ function shapeReturn(r) {
 /* The column list, optionally qualified with a table alias.
  *
  * Built by naming the columns rather than by splitting a string on commas -
- * CONVERT(varchar(7), FRMD_StartDate, 120) contains two commas of its own, and
+ * DATE_FORMAT(FRMD_StartDate, '%Y-%m') contains two commas of its own, and
  * splitting on them produced `f.120) AS Period`, which SQL Server reported as
  * "Incorrect syntax near '.120'". */
 function returnCols(alias = '') {
   const a = alias ? `${alias}.` : '';
   return [
     `${a}FRMD_Id`, `${a}ORG_ID`, `${a}ORG_Name`, `${a}FRMD_Status`, `${a}FRMD_Revision`,
-    `CONVERT(varchar(7), ${a}FRMD_StartDate, 120) AS Period`,
+    `DATE_FORMAT(${a}FRMD_StartDate, '%Y-%m') AS Period`,
     `${a}FRMD_UserName`, `${a}USR_ID`, `${a}FRMD_AprrovedUserName`, `${a}FRMD_ApprovedDate`,
     `${a}FRMD_FormNotes`, `${a}FRMD_NoSlaughter`, `${a}FRMD_NoSlaughterReason`,
   ].join(', ');
@@ -157,7 +157,7 @@ function returnCols(alias = '') {
 const RETURN_COLS = returnCols();
 
 export async function getReturn(frmdId) {
-  const rows = await sql`SELECT ${raw(RETURN_COLS)} FROM dbo.FormData WHERE FRMD_Id = ${Number(frmdId)}`;
+  const rows = await sql`SELECT ${raw(RETURN_COLS)} FROM FormData WHERE FRMD_Id = ${Number(frmdId)}`;
   return rows.length ? shapeReturn(rows[0]) : null;
 }
 
@@ -165,9 +165,9 @@ export async function getReturn(frmdId) {
 export async function findReturn(orgId, period) {
   const rows = await sql`
 SELECT ${raw(RETURN_COLS)}
-FROM dbo.FormData
+FROM FormData
 WHERE ORG_ID = ${Number(orgId)}
-  AND CONVERT(varchar(7), FRMD_StartDate, 120) = ${period}
+  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${period}
   AND FRMD_Status <> ${STATUS.SUPERSEDED}
 ORDER BY FRMD_Revision DESC`;
   return rows.length ? shapeReturn(rows[0]) : null;
@@ -176,9 +176,9 @@ ORDER BY FRMD_Revision DESC`;
 export async function returnHistory(orgId, period) {
   const rows = await sql`
 SELECT ${raw(RETURN_COLS)}
-FROM dbo.FormData
+FROM FormData
 WHERE ORG_ID = ${Number(orgId)}
-  AND CONVERT(varchar(7), FRMD_StartDate, 120) = ${period}
+  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${period}
 ORDER BY FRMD_Revision DESC, FRMD_Id DESC`;
   return rows.map(shapeReturn);
 }
@@ -196,13 +196,14 @@ export async function listReturns({ orgIds, status = null, period = null, limit 
     : `AND f.ORG_ID IN (${orgIds.length ? orgIds.map((n) => Number(n) || -1).join(',') : '-1'})`;
 
   return (await sql`
-SELECT TOP (${Number(limit)}) ${raw(returnCols('f'))}
-FROM dbo.FormData f
+SELECT ${raw(returnCols('f'))}
+FROM FormData f
 WHERE f.FRMD_Status <> ${STATUS.SUPERSEDED}
   ${raw(scope)}
   AND (${status === null ? raw('1=1') : raw('f.FRMD_Status = ')}${status === null ? raw('') : status})
-  AND (${period === null ? raw('1=1') : raw('CONVERT(varchar(7), f.FRMD_StartDate, 120) = ')}${period === null ? raw('') : period})
-ORDER BY f.FRMD_StartDate DESC, f.ORG_Name`).map(shapeReturn);
+  AND (${period === null ? raw('1=1') : raw("DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') = ")}${period === null ? raw('') : period})
+ORDER BY f.FRMD_StartDate DESC, f.ORG_Name
+                  LIMIT ${Number(limit)}`).map(shapeReturn);
 }
 
 /* How many, without fetching them. A badge that reads "50" because the query
@@ -215,7 +216,7 @@ export async function countReturns({ orgIds, status = null }) {
 
   const [r] = await sql`
 SELECT COUNT(*) AS n
-FROM dbo.FormData f
+FROM FormData f
 WHERE f.FRMD_Status <> ${STATUS.SUPERSEDED}
   ${raw(scope)}
   AND (${status === null ? raw('1=1') : raw('f.FRMD_Status = ')}${status === null ? raw('') : status})`;
@@ -232,15 +233,15 @@ export async function missingReturns({ orgIds, period }) {
     : `AND o.ORG_ID IN (${orgIds.length ? orgIds.map((n) => Number(n) || -1).join(',') : '-1'})`;
 
   return sql`
-SELECT o.ORG_ID, o.ORG_Name, LTRIM(RTRIM(ISNULL(a.ABA_RegistrationNumber,''))) AS RC
+SELECT o.ORG_ID, o.ORG_Name, LTRIM(RTRIM(IFNULL(a.ABA_RegistrationNumber,''))) AS RC
 FROM ${raw(D.registry('Organisation'))} o
 JOIN ${raw(D.registry('AbattoirMaster'))} a ON a.ORG_ID = o.ORG_ID
 WHERE o.ORG_Active = 1
   ${raw(scope)}
   AND NOT EXISTS (
-    SELECT 1 FROM dbo.FormData f
+    SELECT 1 FROM FormData f
      WHERE f.ORG_ID = o.ORG_ID
-       AND CONVERT(varchar(7), f.FRMD_StartDate, 120) = ${period}
+       AND DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') = ${period}
        AND f.FRMD_Status <> ${STATUS.SUPERSEDED})
 ORDER BY o.ORG_Name`;
 }
@@ -250,14 +251,14 @@ ORDER BY o.ORG_Name`;
 export async function getReturnItems(frmdId) {
   const items = await sql`
 SELECT FDI_Id, GRP_Id, GRP_Name, GRP_subID, GRP_subNAme, ITM_ID, FDI_Item, FDI_Specie, FDI_Value, FDI_Notes
-FROM dbo.FormDataItems WHERE FRMD_ID = ${Number(frmdId)} ORDER BY FDI_Id`;
+FROM FormDataItems WHERE FRMD_ID = ${Number(frmdId)} ORDER BY FDI_Id`;
 
   if (!items.length) return [];
 
   const parts = await sql`
 SELECT p.FDI_ID, p.DIP_Name, p.DIP_Value
-FROM dbo.FormDataItemParts p
-JOIN dbo.FormDataItems i ON i.FDI_Id = p.FDI_ID
+FROM FormDataItemParts p
+JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID
 WHERE i.FRMD_ID = ${Number(frmdId)}
 ORDER BY p.DIP_ID`;
 
@@ -296,10 +297,10 @@ async function orgName(orgId) {
  * rather than accumulating duplicates. Approved rows are never touched by
  * this - a correction goes through reviseReturn and gets its own FRMD_Id. */
 async function writeItems(t, frmdId, usrId, payload, form) {
-  await t.sql`DELETE p FROM dbo.FormDataItemParts p
-              JOIN dbo.FormDataItems i ON i.FDI_Id = p.FDI_ID
+  await t.sql`DELETE p FROM FormDataItemParts p
+              JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID
               WHERE i.FRMD_ID = ${Number(frmdId)}`;
-  await t.sql`DELETE FROM dbo.FormDataItems WHERE FRMD_ID = ${Number(frmdId)}`;
+  await t.sql`DELETE FROM FormDataItems WHERE FRMD_ID = ${Number(frmdId)}`;
 
   if (payload.noSlaughter) return { items: 0, parts: 0 };
 
@@ -331,17 +332,16 @@ async function writeItems(t, frmdId, usrId, payload, form) {
     const isOffal = group === 'OFFAL CONDEMNATIONS';
     const value = isOffal ? '0' : String(it.value ?? '').trim();
 
-    const [row] = await t.sql`
-INSERT INTO dbo.FormDataItems
+    const { insertId } = await t.run`
+INSERT INTO FormDataItems
   (GRP_Id, GRP_Name, GRP_subID, GRP_subNAme, ITM_ID, FDI_Item, FDI_Specie, FDI_Value, FDI_Notes, FDI_Status, FRMD_ID, USR_ID)
-OUTPUT INSERTED.FDI_Id AS id
 VALUES (${resolved.parentId}, ${resolved.parentName}, ${resolved.subId}, ${resolved.subName},
         ${resolved.itemId ?? 0}, ${(resolved.itemName || name).slice(0, 100)},
         ${String(it.specie || '').slice(0, 10)}, ${value.slice(0, 10)},
         ${it.notes ? String(it.notes) : null}, '1', ${Number(frmdId)}, ${Number(usrId)})`;
 
     nItems++;
-    const fdiId = Number(row.id);
+    const fdiId = Number(insertId);
 
     for (const p of it.parts || []) {
       const organ = String(p.part);
@@ -350,7 +350,7 @@ VALUES (${resolved.parentId}, ${resolved.parentName}, ${resolved.subId}, ${resol
         throw new Error(`"${organ}" is not an organ on the Schedule 8 form.`);
       }
       await t.sql`
-INSERT INTO dbo.FormDataItemParts (FDI_ID, DIP_Name, DIP_Value, PRT_ID)
+INSERT INTO FormDataItemParts (FDI_ID, DIP_Name, DIP_Value, PRT_ID)
 VALUES (${fdiId}, ${organ.slice(0, 50)}, ${Math.round(Number(p.value) || 0)}, ${prtId})`;
       nParts++;
     }
@@ -395,20 +395,19 @@ export async function saveDraft({ payload, user, submit = false }) {
     let revision = existing?.revision ?? 1;
 
     if (frmdId === null) {
-      const [row] = await t.sql`
-INSERT INTO dbo.FormData
+      const { insertId } = await t.run`
+INSERT INTO FormData
   (FRM_ID, FRMD_Revision, ORG_ID, ORG_Name, FRMD_Status, FRMD_StartDate, FRMD_EndDate,
    USR_ID, FRMD_UserName, FRMD_FormNotes, FRMD_NoSlaughter, FRMD_NoSlaughterReason)
-OUTPUT INSERTED.FRMD_Id AS id
 VALUES (${config.arms.formId}, 1, ${orgId}, ${name}, ${status},
         ${periodStart(period)}, ${periodEnd(period)},
         ${Number(user.legacyUsrId ?? user.userId)}, ${inspector},
         ${payload.notes || null}, ${payload.noSlaughter ? 1 : 0},
         ${payload.noSlaughterReason || null})`;
-      frmdId = Number(row.id);
+      frmdId = Number(insertId);
     } else {
       await t.sql`
-UPDATE dbo.FormData
+UPDATE FormData
    SET FRMD_Status = ${status}, ORG_Name = ${name},
        USR_ID = ${Number(user.legacyUsrId ?? user.userId)}, FRMD_UserName = ${inspector},
        FRMD_FormNotes = ${payload.notes || null},
@@ -462,21 +461,20 @@ export async function approveReturn({ frmdId, user }) {
    * statement, and the WHERE re-checks the status so two managers clicking at
    * once cannot both approve. */
   return withTransaction(async (t) => {
-    /* @@ROWCOUNT rather than OUTPUT INSERTED.
+    /* The affected-row count, not a returned row.
      *
-     * dbo.FormData carries the legacy AFTER UPDATE trigger
-     * trig_FormData_CheckNotifiableDeseases, and SQL Server refuses an OUTPUT
-     * clause without INTO on a table that has an enabled trigger. Re-reading
-     * the row count is the plain way and costs nothing here. */
-    const [done] = await t.sql`
-UPDATE dbo.FormData
+     * MySQL reports rows CHANGED rather than rows matched, which is exactly
+     * what is wanted here: the WHERE re-checks FRMD_Status, so of two managers
+     * approving at once the first changes one row and the second changes none.
+     * A count of anything other than 1 means somebody got there first. */
+    const done = await t.run`
+UPDATE FormData
    SET FRMD_Status = ${STATUS.APPROVED},
        FRMD_AprrovedUserName = ${String(user.fullName).slice(0, 100)},
-       FRMD_ApprovedDate = GETDATE()
- WHERE FRMD_Id = ${Number(frmdId)} AND FRMD_Status = ${STATUS.SUBMITTED};
-SELECT @@ROWCOUNT AS n`;
+       FRMD_ApprovedDate = NOW()
+ WHERE FRMD_Id = ${Number(frmdId)} AND FRMD_Status = ${STATUS.SUBMITTED}`;
 
-    if (!done || Number(done.n) !== 1) {
+    if (done.affectedRows !== 1) {
       throw new Error('That return was changed by somebody else a moment ago. Reload and look again.');
     }
 
@@ -486,10 +484,10 @@ SELECT @@ROWCOUNT AS n`;
      * and never, in between, none. */
     if (ret.revision > 1) {
       await t.sql`
-UPDATE dbo.FormData
+UPDATE FormData
    SET FRMD_Status = ${STATUS.SUPERSEDED}
  WHERE ORG_ID = ${Number(ret.orgId)}
-   AND CONVERT(varchar(7), FRMD_StartDate, 120) = ${ret.period}
+   AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${ret.period}
    AND FRMD_Id <> ${Number(frmdId)}
    AND FRMD_Status = ${STATUS.APPROVED}`;
     }
@@ -508,11 +506,11 @@ export async function sendBack({ frmdId, user, reason }) {
 
   const stamp = `[sent back by ${user.fullName} on ${new Date().toISOString().slice(0, 10)}] ${String(reason).trim()}`;
   await sql`
-UPDATE dbo.FormData
+UPDATE FormData
    SET FRMD_Status = ${STATUS.IN_PROGRESS},
-       FRMD_FormNotes = CASE WHEN FRMD_FormNotes IS NULL OR CAST(FRMD_FormNotes AS varchar(max)) = ''
+       FRMD_FormNotes = CASE WHEN FRMD_FormNotes IS NULL OR CAST(FRMD_FormNotes AS CHAR) = ''
                              THEN ${stamp}
-                             ELSE CAST(FRMD_FormNotes AS varchar(max)) + CHAR(10) + ${stamp} END
+                             ELSE CAST(FRMD_FormNotes AS CHAR) + CHAR(10) + ${stamp} END
  WHERE FRMD_Id = ${Number(frmdId)} AND FRMD_Status = ${STATUS.SUBMITTED}`;
 
   return getReturn(frmdId);
@@ -537,18 +535,17 @@ export async function reviseReturn({ frmdId, user, reason }) {
   const stamp = `[revision ${ret.revision + 1} opened by ${user.fullName} on ${new Date().toISOString().slice(0, 10)}] ${String(reason).trim()}`;
 
   return withTransaction(async (t) => {
-    const [row] = await t.sql`
-INSERT INTO dbo.FormData
+    const { insertId } = await t.run`
+INSERT INTO FormData
   (FRM_ID, FRMD_Revision, ORG_ID, ORG_Name, FRMD_Status, FRMD_StartDate, FRMD_EndDate,
    USR_ID, FRMD_UserName, FRMD_FormNotes, FRMD_NoSlaughter, FRMD_NoSlaughterReason)
-OUTPUT INSERTED.FRMD_Id AS id
 VALUES (${config.arms.formId}, ${ret.revision + 1}, ${ret.orgId}, ${ret.orgName},
         ${STATUS.IN_PROGRESS}, ${periodStart(ret.period)}, ${periodEnd(ret.period)},
         ${Number(user.legacyUsrId ?? user.userId)}, ${String(user.fullName).slice(0, 100)},
         ${`${ret.notes ? `${ret.notes}\n` : ''}${stamp}`},
         ${ret.noSlaughter ? 1 : 0}, ${ret.noSlaughterReason || null})`;
 
-    const newId = Number(row.id);
+    const newId = Number(insertId);
     await writeItems(t, newId, Number(user.legacyUsrId ?? user.userId), {
       noSlaughter: ret.noSlaughter, items,
     }, form);
