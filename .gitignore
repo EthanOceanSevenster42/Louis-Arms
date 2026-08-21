@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------------------
+# THIS FILE IS A DISCLOSURE CONTROL, NOT HOUSEKEEPING.
+#
+# The ARMS database holds 155 user accounts with e-mail addresses, telephone
+# numbers, password hashes and nine South African ID numbers; 360 abattoir
+# owner names and 586 telephone numbers; and eleven years of per-plant
+# condemnation figures, which are commercially sensitive and are the reason the
+# whole access-control layer exists.
+#
+# NONE OF IT BELONGS IN A GIT REPOSITORY, and a git repository does not forget.
+# Anything committed here is recoverable from history even after it is deleted.
+# ---------------------------------------------------------------------------
+
+# Secrets. .env holds the SQL password.
+.env
+.env.*
+!.env.example
+
+# Database backups and any extract of them.
+*.bak
+*.bacpac
+*.dacpac
+*.trn
+*.mdf
+*.ldf
+
+# The BUILT explorer: 2,4 MB with every abattoir's figures and 529 telephone
+# numbers compiled into it. app/explorer-template.html is the safe one - it is
+# the same application with `var DATA = null`.
+app/NAHDIS Explorer.html
+NAHDIS Explorer.html
+
+# The extracted payload behind it: owner names and contact numbers in `alias`.
+nahdis-data.json
+*-data.json
+
+# Anything a person exported while looking at real figures.
+*.xlsx
+*.csv
+!app/disease-name-map.csv
+!.claude/**/*.csv
+
+node_modules/
+*.log
+npm-debug.log*
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

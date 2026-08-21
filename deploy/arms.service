@@ -1,0 +1,55 @@
+# ARMS backend as a systemd service, for a Linux host without Docker.
+#
+#   sudo cp deploy/arms.service /etc/systemd/system/arms.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now arms
+#   sudo journalctl -u arms -f
+#
+# Expects the code at /srv/arms, the two applications mounted or copied where
+# SYSTEM_DIR and BUILD_DIR point, and /srv/arms/.env filled in.
+
+[Unit]
+Description=ARMS - Animal Health & Disease Information System
+Documentation=file:/srv/arms/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arms
+Group=arms
+WorkingDirectory=/srv/arms
+
+# The settings live in .env, which the app reads itself. Keep it 0600 and owned
+# by the arms user - it holds the SQL password.
+ExecStart=/usr/bin/node src/server.js
+
+Restart=always
+RestartSec=5
+
+# The server closes its SQL pool on SIGTERM; give it a moment to do so.
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+# The app writes nothing to disk. All state is in SQL, so it needs no writable
+# path at all - which makes these cheap to turn on and worth having.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/srv/arms
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictSUIDSGID=true
+LockPersonality=true
+
+# It listens on 127.0.0.1 by default and nginx fronts it. If you ever set
+# HOST=0.0.0.0 here, make sure something else is doing TLS.
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=arms
+
+[Install]
+WantedBy=multi-user.target

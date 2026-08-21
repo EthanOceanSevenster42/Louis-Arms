@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123a2c">
+<title>ARMS Animal Health</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+     background:#eef1ee;color:#16211c}
+h1,h2,h3{margin:0;font-weight:700}
+.top{position:sticky;top:0;z-index:30;background:#123a2c;color:#fff;padding:12px 16px}
+.top h1{font-size:18px;line-height:1.2;letter-spacing:.01em}
+.top .sub{display:block;font-size:11.5px;font-weight:400;opacity:.78;margin-top:3px}
+.tabs{display:flex;gap:2px;overflow-x:auto;background:#0d2c21;padding:0 8px;position:sticky;top:0;z-index:29}
+.tabs button{flex:none;background:none;border:0;color:#a8c4b7;font:inherit;font-size:13.5px;
+     padding:11px 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:#fff;font-weight:700;border-bottom-color:#4fbf8b}
+.filters{background:#fff;border-bottom:1px solid #dde4e0;padding:10px 16px;
+     display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;position:sticky;top:0;z-index:28}
+.filters .f{display:flex;flex-direction:column;gap:3px}
+.filters label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b63;font-weight:700}
+select,input{font:inherit;padding:7px 9px;border:1px solid #c8d2cc;border-radius:7px;background:#fff;color:inherit}
+select{max-width:230px}
+button.lnk{background:none;border:0;color:#1d6b4f;font:inherit;cursor:pointer;text-decoration:underline;padding:0}
+.wrap{padding:16px;max-width:1100px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:16px;margin:0 0 14px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.card h2{font-size:16px}
+.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5b6b63;margin-bottom:10px}
+.muted{color:#5b6b63}
+.tiny{font-size:12px;color:#5b6b63;line-height:1.5}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;
+      letter-spacing:.04em;text-transform:uppercase;vertical-align:middle;white-space:nowrap}
+.pill.ctrl{background:#a3311f;color:#fff}
+.pill.notif{background:#b8860b;color:#fff}
+.hero{display:flex;gap:22px;flex-wrap:wrap;margin:2px 0 6px}
+.hero .h{min-width:150px}
+.hero .n{font-size:27px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero .u{font-size:12px;color:#5b6b63;margin-top:1px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #eaefec;vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b63;white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:hover{background:#f6f9f7}
+.scroll{overflow-x:auto}
+.bar{height:8px;background:#e3ebe6;border-radius:4px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:#2e8b63;border-radius:4px}
+.bar.alt i{background:#a3311f}
+.warnbox{background:#fdf0ed;border:1px solid #e8c4bb;border-radius:10px;padding:11px 13px;
+     margin:0 0 14px;font-size:13px;color:#7d2517}
+.okbox{background:#e9f5ee;border:1px solid #bcdcc9;border-radius:10px;padding:11px 13px;
+     margin:0 0 14px;font-size:13px;color:#17583e}
+.infobox{background:#eef2f6;border:1px solid #cbd6e0;border-radius:10px;padding:11px 13px;
+     margin:0 0 14px;font-size:13px;color:#33475c}
+.q{display:block;width:100%;text-align:left;background:#fff;border:1px solid #dde4e0;border-radius:10px;
+   padding:13px 15px;margin:0 0 9px;font:inherit;font-size:14.5px;cursor:pointer}
+.q:hover{border-color:#2e8b63;background:#f6fbf8}
+.q small{display:block;color:#5b6b63;font-size:12px;margin-top:3px}
+.empty{text-align:center;color:#5b6b63;padding:34px 16px}
+svg{display:block;max-width:100%}
+.foot{padding:6px 16px 40px;font-size:11.5px;color:#7b8a82;max-width:1100px;margin:0 auto;line-height:1.6}
+.expbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.expbar button{background:#fff;border:1.5px solid #1d6b4f;color:#1d6b4f;font:inherit;font-size:13.5px;
+     font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer}
+.expbar button:hover{background:#f0f7f3}
+.expbar button.pri{background:#1d6b4f;color:#fff}
+.expbar .note{font-size:12px;color:#5b6b63}
+.out{width:100%;min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;
+     border:1px solid #c8d2cc;border-radius:9px;padding:10px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #2e8b63;outline-offset:2px}
+.printhead{display:none}
+@page{size:A4;margin:12mm}
+@media print{
+  .tabs,.filters,.expbar,.foot,.q{display:none !important}
+  .top{position:static;background:#fff;color:#123a2c;padding:0 0 8px;border-bottom:2px solid #123a2c}
+  .top .sub{opacity:1;color:#3d4c45}
+  .printhead{display:block;margin:10px 0 16px;font-size:12px;color:#3d4c45}
+  .printhead b{font-size:15px;color:#123a2c}
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  /* A long table MUST be allowed to run across pages -- break-inside:avoid on the
+     card would try to hold 148 abattoirs on one sheet and overflow instead. Keep
+     the small blocks together, let the table flow, and repeat its header. */
+  .card{box-shadow:none;border:1px solid #cfd8d3;break-inside:auto;page-break-inside:auto;
+        margin-bottom:10px;padding:10px}
+  .hero,.warnbox,.infobox,.okbox,svg{break-inside:avoid;page-break-inside:avoid}
+  .card h3{break-after:avoid;page-break-after:avoid}
+  /* thead must repeat on every continuation page. The rule below is the correct
+     one and real browser printing honours it; headless Edge's --print-to-pdf does
+     not, so do not take a headless test as proof either way -- check a real print. */
+  thead{display:table-header-group}
+  tfoot{display:table-footer-group}
+  tr{break-inside:avoid;page-break-inside:avoid}
+  table{font-size:9.5px;page-break-inside:auto;break-inside:auto}
+  th,td{padding:3px 4px}
+  .scroll{overflow:visible !important}
+  .bar{display:none}
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
+@media (max-width:640px){ .wrap{padding:11px} .hero .n{font-size:22px} select{max-width:150px} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>var DATA = /*__DATA__*/null/*__END__*/;</script>
+<script>
+/* ARMS -- Animal Health & Disease Information System.
+   Strict ES5, single file, no server, no network, works from file://.
+
+   THE ONE RULE THIS PROGRAM EXISTS TO KEEP:
+   head, kilograms, organs and lairage animals are four different measures. They are
+   never added to each other, and no rate is shown unless its denominator covers the
+   same population as its numerator. Where the denominator is missing the figure is
+   withheld and the reason is printed. The old system broke both -- it pooled lairage
+   deaths into the disease report, and it dropped every offal row -- which is the
+   whole reason this one exists. */
+(function(){
+'use strict';
+
+var D = DATA;
+var app, ui;
+var RLS = 'arms-saved-reports-v1';
+var MON = ['January','February','March','April','May','June','July','August','September',
+           'October','November','December'];
+var MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ---------- helpers ---------- */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(x, dp){
+  if(x===null||x===undefined||isNaN(x)) return '–';
+  var d = (dp===undefined) ? 0 : dp;
+  var s = Math.abs(x).toFixed(d).replace('.', ',');
+  var p = s.split(',');
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return (x<0?'-':'') + p.join(',');
+}
+function el(id){ return document.getElementById(id); }
+
+/* ---------- periods ----------
+   Every fact row is keyed to a month, 'YYYY-MM'. Strings sort correctly, so no date
+   parsing happens anywhere. */
+function per(i){ return D.meta.periods[i]; }
+function perPretty(i){ var p = per(i); return MON[parseInt(p.slice(5,7),10)-1] + ' ' + p.slice(0,4); }
+function perShort(i){ var p = per(i); return MONS[parseInt(p.slice(5,7),10)-1] + ' ' + p.slice(2,4); }
+function perYear(i){ return per(i).slice(0,4); }
+
+/* ---------- the register ----------
+   Every registered abattoir in the country is in D.aba, not only the ones that
+   report: [name, province, throughput category, FSA flag, active, reports].
+   An abattoir that has never submitted must never be shown a zero -- it has not
+   reported nil, it has not reported at all. */
+function abaName(a){ return D.aba[a][0]; }
+function abaProv(a){ return D.aba[a][1]; }
+function abaTp(a){   return D.aba[a][2]; }
+function abaAfs(a){  return D.aba[a][3] === 1; }
+function abaAct(a){  return D.aba[a][4] === 1; }
+function abaRep(a){  return D.aba[a][5] === 1; }
+function abaRc(a){   return D.rc[D.aba[a][6]]; }
+function abaNames(a){ return D.alias[a] || []; }
+/* Every name this certificate has ever traded under, except the current one. */
+function abaFormer(a){
+  var n = abaNames(a), out = [], i;
+  for(i=1;i<n.length;i++) out.push(n[i][0]);
+  return out;
+}
+function formerNote(a){
+  var f = abaFormer(a);
+  return f.length ? ' <span class="muted" style="font-size:11.5px">(was ' + esc(f.join('; ')) + ')</span>' : '';
+}
+
+function silentPanel(){
+  if(ui.aba < 0 || abaRep(ui.aba)) return null;
+  return '<div class="card"><h3>' + esc(abaName(ui.aba)) + ' — RC ' + esc(abaRc(ui.aba)) + '</h3>' +
+    '<div class="warnbox" style="margin:0"><b>No Schedule 8 return from this abattoir has reached ARMS.</b>' +
+    '<br><br>It is on the national register — ' + esc(D.prov[abaProv(ui.aba)]) + ', ' +
+    esc(D.tp[abaTp(ui.aba)]) + ' throughput, ' +
+    (abaAct(ui.aba) ? 'active' : 'marked inactive') +
+    (abaAfs(ui.aba) ? ', flagged FSA' : '') +
+    ' — and like every abattoir it owes a Schedule 8 to the ' +
+    esc(D.prov[abaProv(ui.aba)]) + ' Provincial Executive Officer each month. It may be filing that ' +
+    'paper; none of it is here.<br><br>So there is nothing to report, and a zero would be a lie: ' +
+    'it has not reported nil, it has not reported at all.</div></div>';
+}
+
+/* ---------- filtering ---------- */
+function passes(row){
+  var p = row[0], a = row[1], s = row[2];
+  if(p < ui.p0 || p > ui.p1) return false;
+  return passesNoPeriod(row);
+}
+function passesNoPeriod(row){
+  var a = row[1], s = row[2];
+  if(ui.prov >= 0 && abaProv(a) !== ui.prov) return false;
+  if(ui.aba  >= 0 && a !== ui.aba) return false;
+  if(ui.spec >= 0 && s !== ui.spec) return false;
+  return true;
+}
+
+/* A rate is only meaningful where numerator and denominator describe the same
+   animals. Slaughter is reported per month-abattoir-species; a condemnation whose
+   month-abattoir-species carries no slaughter figure has no denominator and must
+   not be quietly divided by somebody else's throughput. Build the set that DOES
+   carry one, restrict both sides to it, and report what fell outside. */
+function denom(){
+  var have = {}, total = 0, i, r, k;
+  for(i=0;i<D.sl.length;i++){
+    r = D.sl[i];
+    if(!passes(r)) continue;
+    k = r[0]+'|'+r[1]+'|'+r[2];
+    if(!have.hasOwnProperty(k)) have[k] = 0;
+    have[k] += r[3];
+    total += r[3];
+  }
+  return { set:have, total:total };
+}
+function inDenom(dn, row){ return dn.set.hasOwnProperty(row[0]+'|'+row[1]+'|'+row[2]); }
+
+function tally(rows, keyFn, dn){
+  var out = {}, matched = 0, unmatched = 0, i, r, k;
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!passes(r)) continue;
+    var v = r[r.length-1];
+    if(dn){ if(inDenom(dn, r)) matched += v; else unmatched += v; }
+    if(keyFn){
+      k = keyFn(r);
+      if(k===null) continue;
+      if(!out.hasOwnProperty(k)) out[k] = 0;
+      out[k] += v;
+    }
+  }
+  return { by:out, matched:matched, unmatched:unmatched };
+}
+function sorted(obj, limit){
+  var a = [], k;
+  for(k in obj) if(obj.hasOwnProperty(k)) a.push([k, obj[k]]);
+  a.sort(function(x,y){ return y[1]-x[1]; });
+  return limit ? a.slice(0, limit) : a;
+}
+
+/* ---------- chart bucketing ----------
+   Chart by month when the selected range is short enough to read, by year when it
+   is not. Fifty-five monthly bars is a smear; five yearly bars is a chart. */
+function buckets(){
+  var n = ui.p1 - ui.p0 + 1, byMonth = n <= 24;
+  var list = [], seen = {}, i, key, lab;
+  for(i=ui.p0;i<=ui.p1;i++){
+    key = byMonth ? per(i) : perYear(i);
+    lab = byMonth ? perShort(i) : key;
+    if(!seen.hasOwnProperty(key)){ seen[key] = list.length; list.push({ label:lab, idx:[], key:key }); }
+    list[seen[key]].idx.push(i);
+  }
+  /* A part-year is not a quiet year. 2026 holds seven months, and shown as a total
+     beside full years it reads as a collapse that never happened. Mark it, and keep
+     it out of any first-to-last comparison.
+     Counts are NOT extrapolated to a full year: projecting condemnations asserts
+     months that have not happened yet, and this system is read by a department.
+     A RATE over a part-year is perfectly sound and is left alone. */
+  for(i=0;i<list.length;i++){
+    list[i].months = list[i].idx.length;
+    list[i].full = byMonth ? true : (list[i].idx.length === 12);
+    list[i].partial = !list[i].full;
+  }
+  return list;
+}
+/* index of the first and last buckets that cover a whole period */
+function fullRange(bk){
+  var a = -1, b = -1, i;
+  for(i=0;i<bk.length;i++) if(bk[i].full){ if(a<0) a = i; b = i; }
+  return { first:a, last:b };
+}
+function bucketMap(bk){
+  var m = {}, i, j;
+  for(i=0;i<bk.length;i++) for(j=0;j<bk[i].idx.length;j++) m[bk[i].idx[j]] = i;
+  return m;
+}
+function bucketTotals(rows, valIx){
+  var bk = buckets(), m = bucketMap(bk), tot = [], i, r;
+  for(i=0;i<bk.length;i++) tot.push(0);
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!m.hasOwnProperty(r[0]) || !passesNoPeriod(r)) continue;
+    tot[m[r[0]]] += r[valIx];
+  }
+  var pairs = [];
+  for(i=0;i<bk.length;i++) pairs.push([bk[i].label, tot[i]]);
+  return pairs;
+}
+/* organs (or carcasses) per 100 animals, per bucket, matched population only */
+function bucketRate(rows, valIx, mult){
+  var bk = buckets(), m = bucketMap(bk), num = [], den = [], sets = [], i, r, k;
+  for(i=0;i<bk.length;i++){ num.push(0); den.push(0); sets.push({}); }
+  for(i=0;i<D.sl.length;i++){
+    r = D.sl[i];
+    if(!m.hasOwnProperty(r[0]) || !passesNoPeriod(r)) continue;
+    sets[m[r[0]]][r[0]+'|'+r[1]+'|'+r[2]] = 1;
+    den[m[r[0]]] += r[3];
+  }
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!m.hasOwnProperty(r[0]) || !passesNoPeriod(r)) continue;
+    k = r[0]+'|'+r[1]+'|'+r[2];
+    if(sets[m[r[0]]].hasOwnProperty(k)) num[m[r[0]]] += r[valIx];
+  }
+  var pairs = [];
+  for(i=0;i<bk.length;i++) pairs.push([bk[i].label, den[i]>0 ? num[i]/den[i]*(mult||100) : null]);
+  return pairs;
+}
+
+/* ---------- charts (hand-drawn SVG: the host blocks every CDN) ---------- */
+/* A count chart must say which of its bars covers less than a whole period, or the
+   short one reads as a fall. Partial bars are drawn hollow and labelled. */
+function vbars(pairs, unit, dp, colour){
+  var n = pairs.length, i, max = 0;
+  for(i=0;i<n;i++) if(pairs[i][1] > max) max = pairs[i][1];
+  if(!n || max <= 0) return '<div class="empty">Nothing to chart for this selection.</div>';
+  var bk = buckets(), partialAt = {}, partNote = [];
+  if(bk.length === n) for(i=0;i<n;i++) if(bk[i].partial){
+    partialAt[i] = bk[i].months;
+    partNote.push(bk[i].label + ' covers ' + bk[i].months + ' months, not a full year');
+  }
+  var W = 720, H = 210, L = 8, R = 8, TOP = 26, BASE = H - 32;
+  var slot = (W - L - R) / n, bw = Math.min(slot * 0.6, 64);
+  var lab = n <= 14;
+  var col = colour || '#2e8b63';
+  var s = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+esc(unit)+'">';
+  s += '<line x1="'+L+'" y1="'+BASE+'" x2="'+(W-R)+'" y2="'+BASE+'" stroke="#dde4e0"></line>';
+  for(i=0;i<n;i++){
+    var v = pairs[i][1], h = max>0 ? (v/max)*(BASE-TOP) : 0;
+    var x = L + slot*i + (slot-bw)/2, y = BASE - h;
+    var part = partialAt.hasOwnProperty(i);
+    s += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+
+         Math.max(h,1).toFixed(1)+'" rx="3" fill="'+(part ? '#fff' : col)+'" stroke="'+col+'"' +
+         (part ? ' stroke-width="2" stroke-dasharray="4 3"' : '') + '></rect>';
+    if(part) s += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(BASE-6).toFixed(1)+
+         '" text-anchor="middle" font-size="9.5" fill="#7b8a82">'+partialAt[i]+' mths</text>';
+    if(lab) s += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle" ' +
+         'font-size="11.5" font-weight="700" fill="#3d4c45">'+fmt(v,dp)+'</text>';
+    if(n <= 30) s += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(BASE+16)+'" text-anchor="middle" ' +
+         'font-size="10.5" fill="#7b8a82">'+esc(pairs[i][0])+'</text>';
+  }
+  s += '</svg><div class="tiny">' + esc(unit) +
+       (partNote.length ? ' · <b>' + esc(partNote.join('; ')) + '</b> — the hollow bar is short ' +
+        'because the period is, not because less was condemned. Nothing is extrapolated: a ' +
+        'projected count would assert months that have not happened.' : '') + '</div>';
+  return s;
+}
+function lineChart(pairs, unit, dp){
+  var n = pairs.length, i, max = 0, any = false;
+  for(i=0;i<n;i++) if(pairs[i][1]!==null && !isNaN(pairs[i][1])){ any = true;
+    if(pairs[i][1] > max) max = pairs[i][1]; }
+  if(!any || max <= 0) return '<div class="empty">No rate can be shown for this selection.</div>';
+  var W = 720, H = 165, PAD = 30, BASE = H - 28;
+  var x = function(i){ return PAD + (n<2?0:(i/(n-1))*(W-PAD*2)); };
+  var y = function(v){ return BASE - (v/max)*(BASE-30); };
+  var d = '', dots = '', started = false, lab = n <= 14;
+  for(i=0;i<n;i++){
+    if(pairs[i][1]===null||isNaN(pairs[i][1])){ started = false; continue; }
+    d += (started?' L':'M') + x(i).toFixed(1) + ' ' + y(pairs[i][1]).toFixed(1);
+    started = true;
+    dots += '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(pairs[i][1]).toFixed(1)+'" r="3.5" fill="#1d6b4f"></circle>';
+    if(lab) dots += '<text x="'+x(i).toFixed(1)+'" y="'+(y(pairs[i][1])-9).toFixed(1)+
+      '" text-anchor="middle" font-size="10.5" fill="#3d4c45">'+fmt(pairs[i][1],dp)+'</text>';
+  }
+  var xl = '';
+  if(n <= 30) for(i=0;i<n;i++) xl += '<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+
+    '" text-anchor="middle" font-size="10.5" fill="#7b8a82">'+esc(pairs[i][0])+'</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+esc(unit)+'">' +
+    '<path d="'+d+'" fill="none" stroke="#1d6b4f" stroke-width="2"></path>' + dots + xl +
+    '</svg><div class="tiny">' + esc(unit) + '</div>';
+}
+/* A small inline trend, sized to sit in a table cell. Ten of these read far better
+   than ten lines fighting each other on one chart. */
+function spark(vals, colour){
+  var n = vals.length, i, max = 0, any = false;
+  for(i=0;i<n;i++) if(vals[i] !== null && !isNaN(vals[i])){ any = true; if(vals[i] > max) max = vals[i]; }
+  if(!any || n < 2) return '';
+  var W = 150, H = 26;
+  var x = function(i){ return (i/(n-1))*(W-2)+1; };
+  var y = function(v){ return max>0 ? H-2 - (v/max)*(H-6) : H-2; };
+  var d = '', started = false;
+  for(i=0;i<n;i++){
+    if(vals[i]===null||isNaN(vals[i])){ started = false; continue; }
+    d += (started?' L':'M') + x(i).toFixed(1) + ' ' + y(vals[i]).toFixed(1);
+    started = true;
+  }
+  var lastI = -1;
+  for(i=n-1;i>=0;i--) if(vals[i]!==null && !isNaN(vals[i])){ lastI = i; break; }
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" aria-hidden="true">' +
+    '<path d="'+d+'" fill="none" stroke="'+(colour||'#2e8b63')+'" stroke-width="1.6"></path>' +
+    (lastI>=0 ? '<circle cx="'+x(lastI).toFixed(1)+'" cy="'+y(vals[lastI]).toFixed(1)+
+                '" r="2.4" fill="'+(colour||'#2e8b63')+'"></circle>' : '') + '</svg>';
+}
+/* Per-bucket totals for ONE item, used by the top-ten trends. */
+function itemSeries(rows, valIx, itemIx){
+  var bk = buckets(), m = bucketMap(bk), out = [], i, r;
+  for(i=0;i<bk.length;i++) out.push(0);
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(r[3] !== itemIx) continue;
+    if(!m.hasOwnProperty(r[0]) || !passesNoPeriod(r)) continue;
+    out[m[r[0]]] += r[valIx];
+  }
+  return out;
+}
+function topTenTrend(rows, valIx, unit, colour){
+  var by = {}, i, r, k;
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!passes(r)) continue;
+    if(named(r[3]) === null) continue;
+    if(!by.hasOwnProperty(r[3])) by[r[3]] = 0;
+    by[r[3]] += r[valIx];
+  }
+  var list = [];
+  for(k in by) if(by.hasOwnProperty(k)) list.push([parseInt(k,10), by[k]]);
+  list.sort(function(a,b){ return b[1]-a[1]; });
+  list = list.slice(0,10);
+  if(!list.length) return '<div class="empty">Nothing reported for this selection.</div>';
+  var bk = buckets(), fr = fullRange(bk);
+  /* Compare whole periods only. A part-year against full years is not a trend. */
+  var cA = fr.first, cB = fr.last, canCompare = (cA >= 0 && cB > cA);
+  var h = '<div class="scroll"><table><thead><tr><th>Disease or condition</th>' +
+    '<th class="n">Total</th><th>Trend</th>' +
+    (canCompare ? '<th class="n">' + esc(bk[cA].label) + '</th><th class="n">' + esc(bk[cB].label) +
+                  '</th><th class="n">Change</th>' : '') +
+    '</tr></thead><tbody>';
+  for(i=0;i<list.length;i++){
+    var s = itemSeries(rows, valIx, list[i][0]);
+    h += '<tr><td>' + esc(D.item[list[i][0]]) + legalBadge(D.item[list[i][0]]) + '</td>' +
+         '<td class="n">' + fmt(list[i][1]) + '</td>' +
+         '<td>' + spark(s, colour) + '</td>';
+    if(canCompare){
+      var a = s[cA], b = s[cB];
+      var chg = (a > 0) ? ((b-a)/a*100) : null;
+      h += '<td class="n">' + fmt(a) + '</td><td class="n">' + fmt(b) + '</td>' +
+           '<td class="n"' + (chg!==null && chg>0 ? ' style="color:#a3311f"' : '') + '>' +
+           (chg===null ? '–' : (chg>0?'+':'') + fmt(chg,0) + '%') + '</td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div><div class="tiny" style="margin-top:8px">Counts in ' + esc(unit) +
+    ', not rates — the trend of the burden itself.';
+  var partials = [];
+  for(i=0;i<bk.length;i++) if(bk[i].partial) partials.push(bk[i].label + ' (' + bk[i].months + ' months)');
+  if(partials.length)
+    h += ' <b>' + esc(partials.join(', ')) + ' ' + (partials.length>1?'are':'is') +
+         ' not a whole period</b>, so ' + (canCompare
+           ? 'the change above compares ' + esc(bk[cA].label) + ' with ' + esc(bk[cB].label) +
+             ' and leaves ' + (partials.length>1?'them':'it') + ' out. The line still shows ' +
+             (partials.length>1?'them':'it') + ', dipping only because the period is short.'
+           : 'no change is shown — there are not two whole periods to compare.');
+  else if(canCompare)
+    h += ' Change compares the first whole period with the last; where the first was nil there is ' +
+         'nothing to divide by and it shows a dash.';
+  return h + '</div>';
+}
+
+/* Year on year, item by item. One row per thing, one column per period, each cell
+   carrying the count and the change on the period before it. Partial periods are
+   shown but never used as either side of a change -- comparing seven months with
+   twelve is not a trend, it is a shorter year. */
+function yoyTable(rows, valIx, keyFn, label, unit, colour, limit){
+  var bk = buckets(), m = bucketMap(bk), tot = {}, series = {}, i, r, k;
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!m.hasOwnProperty(r[0]) || !passesNoPeriod(r)) continue;
+    k = keyFn(r);
+    if(k === null) continue;
+    if(!series.hasOwnProperty(k)){
+      series[k] = [];
+      for(var j=0;j<bk.length;j++) series[k].push(0);
+      tot[k] = 0;
+    }
+    series[k][m[r[0]]] += r[valIx];
+    tot[k] += r[valIx];
+  }
+  var list = [];
+  for(k in tot) if(tot.hasOwnProperty(k)) list.push([k, tot[k]]);
+  if(!list.length) return '<div class="empty">Nothing reported for this selection.</div>';
+  list.sort(function(a,b){ return b[1]-a[1]; });
+  if(limit) list = list.slice(0, limit);
+
+  var h = '<div class="scroll"><table><thead><tr><th>' + esc(label) + '</th><th class="n">Total</th>' +
+          '<th>Trend</th>';
+  for(i=0;i<bk.length;i++)
+    h += '<th class="n">' + esc(bk[i].label) + (bk[i].partial ? ' *' : '') + '</th>';
+  h += '</tr></thead><tbody>';
+  for(i=0;i<list.length;i++){
+    var s = series[list[i][0]];
+    h += '<tr><td>' + esc(list[i][0]) + legalBadge(list[i][0]) + '</td>' +
+         '<td class="n"><b>' + fmt(list[i][1]) + '</b></td>' +
+         '<td>' + spark(s, colour) + '</td>';
+    for(var c=0;c<bk.length;c++){
+      var v = s[c], pct2 = null;
+      /* a change is only shown between two WHOLE periods that sit next to each other */
+      if(c > 0 && bk[c].full && bk[c-1].full && s[c-1] > 0) pct2 = (v - s[c-1]) / s[c-1] * 100;
+      h += '<td class="n">' + fmt(v) +
+           (pct2 === null ? '' :
+             '<br><span style="font-size:10.5px;' + (pct2 > 0 ? 'color:#a3311f' : 'color:#1d6b4f') +
+             '">' + (pct2>0?'+':'') + fmt(pct2,0) + '%</span>') +
+           '</td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div><div class="tiny" style="margin-top:8px">Counts in ' + esc(unit) +
+       '. The small figure under each is the change on the period before it — ' +
+       '<span style="color:#a3311f">red is worse</span>, ' +
+       '<span style="color:#1d6b4f">green is better</span>.';
+  var parts = [];
+  for(i=0;i<bk.length;i++) if(bk[i].partial) parts.push(bk[i].label + ' (' + bk[i].months + ' months)');
+  if(parts.length)
+    h += ' <b>* ' + esc(parts.join(', ')) + ' is not a whole period</b>, so no change is calculated ' +
+         'into or out of it. The count is real; it simply covers fewer months.';
+  return h + '</div>';
+}
+
+function barTable(rows, unit, dp, alt){
+  if(!rows.length) return '<div class="empty">Nothing reported for this selection.</div>';
+  var max = rows[0][1], h = '<div class="scroll"><table><tbody>';
+  for(var i=0;i<rows.length;i++){
+    h += '<tr><td>' + esc(rows[i][0]) + '</td>' +
+         '<td class="n">' + fmt(rows[i][1], dp) + ' <span class="muted">' + esc(unit) + '</span></td>' +
+         '<td style="width:34%"><div class="bar' + (alt?' alt':'') + '"><i style="width:' +
+         (max>0 ? (rows[i][1]/max*100) : 0) + '%"></i></div></td></tr>';
+  }
+  return h + '</tbody></table></div>';
+}
+
+/* ---------- chrome ---------- */
+/* Order set by Louis, 16 Aug 2026. Ask a question sits at the end because he did
+   not name it -- it is a shortcut into the others, not a report in its own right. */
+var TABS = [
+  ['dash',  'Dashboard'],
+  ['aba',   'Abattoir'],
+  ['dis',   'Diseases'],
+  ['carc',  'Carcasses'],
+  ['offal', 'Offal'],
+  ['cmp',   'Compare'],
+  ['cover', 'Coverage'],
+  ['notify','Notifications'],
+  ['lair',  'Lairage'],
+  ['thru',  'Throughput'],
+  ['saved', 'Reports'],
+  ['trim',  'Trim (kg)'],
+  ['ask',   'Ask a question']
+];
+function tabLabel(t){
+  for(var i=0;i<TABS.length;i++) if(TABS[i][0]===t) return TABS[i][1];
+  return t;
+}
+
+function chrome(){
+  var h = '<div class="top"><h1>ARMS' +
+    '<span class="sub">Animal Health &amp; Disease Information System · Schedule 8 returns, ' +
+    perPretty(0) + ' to ' + perPretty(D.meta.periods.length-1) + ' · ' +
+    fmt(D.meta.returns) + ' approved returns · ' + fmt(D.meta.registered) +
+    ' abattoirs on the national register, ' + fmt(D.meta.reporting) +
+    ' of them reporting</span></h1></div>';
+  h += '<div class="tabs">';
+  for(var i=0;i<TABS.length;i++)
+    h += '<button data-tab="'+TABS[i][0]+'"'+(ui.tab===TABS[i][0]?' class="on"':'')+'>' +
+         esc(TABS[i][1]) + '</button>';
+  h += '</div>';
+  h += '<div class="filters">';
+  h += '<div class="f"><label for="p0">From month</label><select id="p0">' + perOpts(ui.p0) + '</select></div>';
+  h += '<div class="f"><label for="p1">To month</label><select id="p1">' + perOpts(ui.p1) + '</select></div>';
+  h += '<div class="f"><label for="prov">Province</label><select id="prov">' +
+       '<option value="-1">All nine</option>' + listOpts(D.prov, ui.prov) + '</select></div>';
+  h += '<div class="f"><label for="aba">Abattoir</label><select id="aba">' +
+       '<option value="-1">All on the register</option>' + abaOpts() + '</select></div>';
+  h += '<div class="f"><label for="spec">Species</label><select id="spec">' +
+       '<option value="-1">All</option>' + listOpts(D.spec, ui.spec) + '</select></div>';
+  /* Disease is the last filter, and only on the tab that uses it -- a control that
+     changes nothing on the screen you are looking at is worse than no control. */
+  if(ui.tab==='dis')
+    h += '<div class="f"><label for="dis">Disease</label><select id="dis">' +
+         '<option value="-1">All diseases</option>' + disOpts() + '</select></div>';
+  h += '<div class="f"><label>&nbsp;</label><button class="lnk" data-reset="1">clear</button></div>';
+  h += '</div>';
+  return h;
+}
+function perOpts(sel){
+  var h = '', i;
+  for(i=0;i<D.meta.periods.length;i++)
+    h += '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(perPretty(i))+'</option>';
+  return h;
+}
+function listOpts(arr, sel){
+  var h = '', i;
+  for(i=0;i<arr.length;i++) h += '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(arr[i])+'</option>';
+  return h;
+}
+function abaOpts(){
+  var rep = [], sil = [], i, h = '';
+  for(i=0;i<D.aba.length;i++){
+    if(ui.prov >= 0 && abaProv(i) !== ui.prov) continue;
+    (abaRep(i) ? rep : sil).push([i, abaName(i)]);
+  }
+  function byName(x,y){ return x[1] < y[1] ? -1 : (x[1] > y[1] ? 1 : 0); }
+  rep.sort(byName); sil.sort(byName);
+  function opts(list){
+    var s = '', j;
+    for(j=0;j<list.length;j++)
+      s += '<option value="'+list[j][0]+'"'+(list[j][0]===ui.aba?' selected':'')+'>' +
+           esc(list[j][1]) + '  [' + esc(abaRc(list[j][0])) + ']' +
+           (abaFormer(list[j][0]).length ? '  (was ' + esc(abaFormer(list[j][0]).join('; ')) + ')' : '') +
+           '</option>';
+    return s;
+  }
+  if(rep.length) h += '<optgroup label="Reporting ('+rep.length+')">' + opts(rep) + '</optgroup>';
+  if(sil.length) h += '<optgroup label="No returns on record ('+sil.length+')">' + opts(sil) + '</optgroup>';
+  return h;
+}
+function scopeLine(){
+  var bits = [];
+  bits.push(ui.p0===ui.p1 ? perPretty(ui.p0) : perPretty(ui.p0) + ' to ' + perPretty(ui.p1));
+  bits.push(ui.aba >= 0 ? abaName(ui.aba) : (ui.prov >= 0 ? D.prov[ui.prov] : 'all nine provinces'));
+  bits.push(ui.spec >= 0 ? D.spec[ui.spec] : 'all species');
+  if(ui.tab==='dis') bits.push(ui.dis >= 0 ? D.item[ui.dis] : 'all diseases');
+  return bits.join(' · ');
+}
+/* Only items that actually appear as a condemnation -- lairage entries are not
+   diseases and must never be offered here. That confusion is exactly what the old
+   Disease Summary report shipped to the department for eleven years. */
+function diseaseIx(){
+  var seen = {}, out = [], i;
+  for(i=0;i<D.wc.length;i++) seen[D.wc[i][3]] = 1;
+  for(i=0;i<D.of.length;i++) seen[D.of[i][3]] = 1;
+  for(i=0;i<D.pc.length;i++) seen[D.pc[i][3]] = 1;
+  for(var k in seen) if(seen.hasOwnProperty(k) && named(parseInt(k,10))!==null) out.push(parseInt(k,10));
+  out.sort(function(a,b){ return D.item[a] < D.item[b] ? -1 : (D.item[a] > D.item[b] ? 1 : 0); });
+  return out;
+}
+function disOpts(){
+  var ix = diseaseIx(), h = '', i;
+  for(i=0;i<ix.length;i++)
+    h += '<option value="'+ix[i]+'"'+(ix[i]===ui.dis?' selected':'')+'>'+esc(D.item[ix[i]])+'</option>';
+  return h;
+}
+
+/* ---------- saving and exporting ----------
+   The exporter reads the RENDERED page, not the underlying arrays. That is
+   deliberate: an export built from a second calculation can drift away from what
+   the screen showed, and then two documents disagree about the same month. What
+   you see is what leaves. */
+function expBar(){
+  return '<div class="expbar">' +
+    '<button data-exp="pdf" class="pri">Save as PDF</button>' +
+    '<button data-exp="print">Print</button>' +
+    '<button data-exp="csv">Save as Excel</button>' +
+    '<button data-exp="save">Save as report</button>' +
+    '<button data-exp="txt" class="lnk" style="border:0;background:none;padding:0 6px">show as text</button>' +
+    '<span class="note">exports exactly what is on this screen</span></div>' +
+    '<div id="expout"></div>';
+}
+function csvCell(s){
+  s = String(s==null?'':s);
+  /* Strip the narrow no-break space used as a thousands separator so Excel reads
+     the cell as a number. Decimal commas are kept -- this is a South African file. */
+  if(/^[\-–]?[\d   ,.]+%?$/.test(s)) s = s.replace(/[  ]/g,'');
+  if(/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+function csvRow(a){
+  var out = [], i;
+  for(i=0;i<a.length;i++) out.push(csvCell(a[i]));
+  return out.join(',');
+}
+function currentCsv(){
+  var L = [], i, j, k;
+  L.push(csvRow(['ARMS — Animal Health & Disease Information System']));
+  L.push(csvRow(['Report', tabLabel(ui.tab)]));
+  L.push(csvRow(['Selection', scopeLine()]));
+  L.push(csvRow(['Generated', (new Date()).toString()]));
+  L.push('');
+  var cards = app.querySelectorAll('.card');
+  for(i=0;i<cards.length;i++){
+    var head = cards[i].querySelector('h3') || cards[i].querySelector('h2');
+    if(head) L.push(csvRow([(head.textContent||'').replace(/\s+/g,' ')]));
+    var heroes = cards[i].querySelectorAll('.hero .h');
+    for(j=0;j<heroes.length;j++){
+      var nEl = heroes[j].querySelector('.n'), uEl = heroes[j].querySelector('.u');
+      L.push(csvRow([ uEl ? (uEl.textContent||'').replace(/\s+/g,' ') : '',
+                      nEl ? (nEl.textContent||'').replace(/\s+/g,' ') : '' ]));
+    }
+    var tables = cards[i].querySelectorAll('table');
+    for(j=0;j<tables.length;j++){
+      var rows = tables[j].querySelectorAll('tr');
+      for(k=0;k<rows.length;k++){
+        var cells = rows[k].querySelectorAll('th,td'), line = [], c;
+        for(c=0;c<cells.length;c++){
+          var t = (cells[c].textContent||'').replace(/\s+/g,' ');
+          t = t.replace(/^\s+|\s+$/g,'');
+          if(t !== '') line.push(t);
+        }
+        if(line.length) L.push(csvRow(line));
+      }
+    }
+    L.push('');
+  }
+  L.push(csvRow(['Head, kilograms, organs and lairage animals are four different measures and are never added together.']));
+  L.push(csvRow(['Where a rate is blank the denominator was missing for that population; the count still stands.']));
+  return L.join('\r\n');
+}
+function fileStamp(){
+  var d = new Date();
+  function p2(n){ return (n<10?'0':'')+n; }
+  return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+}
+function tryDownload(text, name){
+  try {
+    var blob = new Blob(['﻿' + text], { type:'text/csv;charset=utf-8;' });
+    if(window.navigator && window.navigator.msSaveBlob){ window.navigator.msSaveBlob(blob, name); return true; }
+    var a = document.createElement('a');
+    if(a.download === undefined) return false;
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return true;
+  } catch(e){ return false; }
+}
+function showText(text, msg){
+  var box = el('expout');
+  if(!box) return;
+  box.innerHTML = '<div class="card"><h3>Report as text</h3>' +
+    (msg ? '<div class="infobox">'+esc(msg)+'</div>' : '') +
+    '<textarea class="out" id="expta" readonly></textarea>' +
+    '<div class="expbar" style="margin-top:8px"><button data-exp="copy">Copy it all</button>' +
+    '<button data-exp="hide" class="lnk" style="border:0;background:none">close</button></div></div>';
+  el('expta').value = text;
+}
+
+/* ---------- who gets told, and what they are told ----------
+   Section 11 of the Animal Diseases Act puts the duty on the person who FINDS it —
+   the abattoir veterinarian or the senior meat inspector — to report immediately to
+   the state veterinarian of that area. This holds the contact list and writes the
+   message; it does not send anything itself, and it never claims to have. Sending
+   is a deliberate human act, which for a statutory notification is correct. */
+var CLS = 'arms-notify-contacts-v1';
+function loadContacts(){
+  var c = null;
+  try { c = JSON.parse(window.localStorage.getItem(CLS)); } catch(e){ c = null; }
+  return (c instanceof Array) ? c : [];
+}
+function putContacts(a){
+  try { window.localStorage.setItem(CLS, JSON.stringify(a)); return true; }
+  catch(e){ window.alert('The contact list could not be saved on this device: ' + e.message); return false; }
+}
+/* Everyone who must be told about a case at this abattoir: the province's own
+   people, plus anyone marked as national. */
+function contactsFor(provName){
+  var all = loadContacts(), out = [], i;
+  for(i=0;i<all.length;i++)
+    if(all[i].prov === 'All provinces' || all[i].prov === provName) out.push(all[i]);
+  return out;
+}
+function notifyBody(dis, provName, rows){
+  var L = [], i;
+  L.push('NOTIFICATION OF A ' + (legalClass(dis)==='controlled' ? 'CONTROLLED' : 'NOTIFIABLE') +
+         ' ANIMAL DISEASE');
+  L.push('Animal Diseases Act, Act 35 of 1984 — section 11');
+  L.push('');
+  L.push('Disease:            ' + dis);
+  L.push('Province:           ' + provName);
+  L.push('Reporting period:   ' + (ui.p0===ui.p1 ? perPretty(ui.p0)
+                                                 : perPretty(ui.p0) + ' to ' + perPretty(ui.p1)));
+  L.push('Reported by:        Food Safety Agency (Pty) Ltd — Independent Meat Inspection');
+  L.push('');
+  L.push('The following was recorded on the Schedule 8 return(s) for the abattoir(s) below.');
+  L.push('');
+  for(i=0;i<rows.length;i++){
+    L.push('  Abattoir:  ' + rows[i].aba);
+    L.push('  Species:   ' + rows[i].sp);
+    L.push('  Condemned: ' + fmt(rows[i].v) + ' ' + rows[i].unit);
+    L.push('');
+  }
+  L.push('This notification is made in terms of section 11 of the Animal Diseases Act, which');
+  L.push('requires a veterinarian, or any other person who finds the incidence or suspected');
+  L.push('incidence of a controlled animal disease, to report it immediately.');
+  L.push('');
+  L.push('Please acknowledge receipt of this notification and advise what further action or');
+  L.push('sampling is required.');
+  L.push('');
+  L.push('Reported by (name):        ______________________________________');
+  L.push('Designation:               Abattoir veterinarian / Senior meat inspector');
+  L.push('Date found:                ______________________________________');
+  L.push('Contact number:            ______________________________________');
+  L.push('');
+  L.push('Figures taken from ARMS on ' + fileStamp() + '. Counts are of animals condemned at');
+  L.push('post-mortem inspection and are not, on their own, a laboratory diagnosis.');
+  return L.join('\n');
+}
+function vNotify(){
+  var all = loadContacts(), i;
+  var h = '<div class="card"><h2>Who gets told</h2><div class="tiny" style="margin-top:6px">' +
+    'When a controlled or notifiable disease is found at an abattoir, the abattoir veterinarian ' +
+    'or the senior meat inspector must tell the <b>state veterinarian of that area</b> — ' +
+    'immediately, under section 11 of the Animal Diseases Act. Keep those people here, per ' +
+    'province, and ARMS will write the notification for you on the Diseases tab.' +
+    '</div><div class="expbar" style="margin-top:12px">' +
+    '<button class="pri" data-exp="addcontact">Add a person</button></div></div>';
+  h += '<div class="card"><h3>The two categories, and why they are not the same</h3>' +
+    '<div class="tiny">The Schedule 8 form puts them in one group. The law does not.<br><br>' +
+    '<span class="pill ctrl">CONTROLLED</span> ' + CONTROLLED.length + ' diseases. Section 11 ' +
+    'requires <b>immediate</b> report of the incidence <b>or suspected incidence</b> — suspicion ' +
+    'alone is enough to trigger the duty.<br><br>' +
+    '<span class="pill notif">NOTIFIABLE</span> ' + NOTIFIABLE.length + ' diseases: ' +
+    esc(NOTIFIABLE.join(', ')) + '. Reportable, but not carrying the controlled-disease control ' +
+    'measures.<br><br>Source: Animal Diseases Act 35 of 1984 and Animal Diseases Regulations ' +
+    'R.2026 of 1986, Directorate: Animal Health.</div></div>';
+  if(!all.length){
+    h += '<div class="empty">Nobody on the list yet.<br><span class="tiny">Add at least the ' +
+         'state veterinarian for each province you work in.</span></div>';
+    return h;
+  }
+  h += '<div class="card"><h3>Contacts</h3><div class="scroll"><table><thead><tr>' +
+    '<th>Name</th><th>Role</th><th>E-mail</th><th>Telephone</th><th>Province</th><th></th>' +
+    '</tr></thead><tbody>';
+  for(i=0;i<all.length;i++)
+    h += '<tr><td>' + esc(all[i].name) + '</td><td class="muted">' + esc(all[i].role||'') + '</td>' +
+         '<td>' + esc(all[i].email||'') + '</td><td class="muted">' + esc(all[i].tel||'') + '</td>' +
+         '<td class="muted">' + esc(all[i].prov||'') + '</td>' +
+         '<td class="n"><button class="lnk" data-delc="'+i+'" style="color:#a3311f">remove</button></td></tr>';
+  h += '</tbody></table></div><div class="tiny" style="margin-top:8px">Kept on this device only. ' +
+       'ARMS writes the message; a person sends it. A statutory notification should never leave ' +
+       'without somebody deciding to send it.</div></div>';
+  return h;
+}
+function addContact(){
+  var name = window.prompt('Name of the person to be notified');
+  if(name === null) return;
+  name = trimStr(name);
+  if(!name){ window.alert('A contact needs a name.'); return; }
+  var role = trimStr(window.prompt('Their role (for example: State Veterinarian)', 'State Veterinarian') || '');
+  var email = trimStr(window.prompt('E-mail address') || '');
+  if(!email || email.indexOf('@') < 1){
+    window.alert('An e-mail address is needed, and it must contain an @.'); return;
+  }
+  var tel = trimStr(window.prompt('Telephone number (optional)') || '');
+  var prov = trimStr(window.prompt('Which province do they cover? Type a province name exactly as ' +
+    'it appears in ARMS, or type: All provinces\n\n' + D.prov.join(', '), 'All provinces') || '');
+  var ok = (prov === 'All provinces');
+  for(var i=0;i<D.prov.length;i++) if(D.prov[i] === prov) ok = true;
+  if(!ok){
+    window.alert('"' + prov + '" is not one of the provinces in ARMS, so this contact would never ' +
+                 'be matched to an abattoir. Use one of: All provinces, ' + D.prov.join(', '));
+    return;
+  }
+  var all = loadContacts();
+  all.push({ name:name, role:role, email:email, tel:tel, prov:prov });
+  if(putContacts(all)){ ui.tab = 'notify'; render(); }
+}
+function trimStr(s){ return String(s==null?'':s).replace(/^\s+/,'').replace(/\s+$/,''); }
+
+/* Build the notification for whatever disease and scope is on screen. It shows the
+   recipients, the message, and a mailto link -- and stops if nobody is on the list
+   for that province rather than producing a letter with no addressee. */
+function composeAlert(){
+  if(ui.dis < 0){ window.alert('Choose a disease first.'); return; }
+  var dis = D.item[ui.dis], i, r;
+  var byProv = {}, rows = [];
+  for(i=0;i<D.wc.length;i++){ r = D.wc[i];
+    if(passes(r) && r[3]===ui.dis && r[4] > 0){
+      byProv[D.prov[abaProv(r[1])]] = 1;
+      rows.push({ aba:abaName(r[1]), prov:D.prov[abaProv(r[1])], sp:D.spec[r[2]],
+                  v:r[4], unit:'carcasses (head)' });
+    } }
+  for(i=0;i<D.of.length;i++){ r = D.of[i];
+    if(passes(r) && r[3]===ui.dis && r[5] > 0){
+      byProv[D.prov[abaProv(r[1])]] = 1;
+      rows.push({ aba:abaName(r[1]), prov:D.prov[abaProv(r[1])], sp:D.spec[r[2]],
+                  v:r[5], unit:'organs (' + D.organ[r[4]] + ')' });
+    } }
+  if(!rows.length){
+    window.alert('Nothing was recorded for ' + dis + ' in this selection, so there is nothing to report.');
+    return;
+  }
+  var provs = [], k;
+  for(k in byProv) if(byProv.hasOwnProperty(k)) provs.push(k);
+
+  var to = [], missing = [], j;
+  for(i=0;i<provs.length;i++){
+    var cs = contactsFor(provs[i]);
+    if(!cs.length){ missing.push(provs[i]); continue; }
+    for(j=0;j<cs.length;j++) if(to.indexOf(cs[j].email) < 0) to.push(cs[j].email);
+  }
+  var body = notifyBody(dis, provs.join(', '), rows);
+  var subject = (legalClass(dis)==='controlled' ? 'CONTROLLED' : 'NOTIFIABLE') +
+                ' ANIMAL DISEASE — ' + dis + ' — ' + provs.join(', ');
+  var box = el('expout');
+  var h = '<div class="card"><h3>Notification — ' + esc(dis) + legalBadge(dis) + '</h3>';
+  if(missing.length)
+    h += '<div class="warnbox"><b>Nobody is listed for ' + esc(missing.join(', ')) + '.</b> ' +
+         'Cases were found there and the message below will not reach anyone for that province. ' +
+         'Add the state veterinarian on the Notifications tab first.</div>';
+  h += '<div class="tiny" style="margin-bottom:8px"><b>To:</b> ' +
+       (to.length ? esc(to.join('; ')) : '<span style="color:#a3311f">nobody on the list</span>') +
+       '<br><b>Subject:</b> ' + esc(subject) + '</div>';
+  h += '<textarea class="out" id="expta" readonly></textarea>';
+  h += '<div class="expbar" style="margin-top:8px">' +
+       (to.length ? '<a class="lnk" style="border:1.5px solid #1d6b4f;border-radius:9px;' +
+        'padding:8px 14px;font-weight:700;text-decoration:none" href="mailto:' +
+        encodeURIComponent(to.join(',')).replace(/%40/g,'@').replace(/%2C/g,',') +
+        '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body) +
+        '">Open in e-mail</a>' : '') +
+       '<button data-exp="copy">Copy the message</button>' +
+       '<button data-exp="hide" class="lnk" style="border:0;background:none">close</button></div>';
+  h += '<div class="tiny" style="margin-top:8px">ARMS writes it; you send it. A statutory ' +
+       'notification should not leave without a person deciding to send it.</div></div>';
+  if(box){ box.innerHTML = h; el('expta').value = body; }
+}
+
+/* ---------- saved reports ---------- */
+function loadReports(){
+  var r = null;
+  try { r = JSON.parse(window.localStorage.getItem(RLS)); } catch(e){ r = null; }
+  return (r instanceof Array) ? r : [];
+}
+function putReports(a){
+  try { window.localStorage.setItem(RLS, JSON.stringify(a)); return true; }
+  catch(e){ window.alert('This report could not be saved on this device: ' + e.message); return false; }
+}
+function saveCurrent(){
+  var suggested = tabLabel(ui.tab) + ' — ' + scopeLine();
+  var name = window.prompt('Name this report', suggested);
+  if(name === null) return;
+  name = String(name).replace(/^\s+|\s+$/g,'');
+  if(!name){ window.alert('A report needs a name.'); return; }
+  var all = loadReports();
+  all.push({ name:name, tab:ui.tab, p0:ui.p0, p1:ui.p1, prov:ui.prov, aba:ui.aba, spec:ui.spec, dis:ui.dis,
+             scope:scopeLine(), saved:fileStamp() });
+  if(putReports(all)){ ui.tab = 'saved'; render(); }
+}
+function openReport(i){
+  var r = loadReports()[i];
+  if(!r) return;
+  /* Clamp to what this build actually holds -- a report saved against an older
+     data file must not silently point at the wrong months. */
+  var last = D.meta.periods.length - 1;
+  ui.p0 = Math.max(0, Math.min(last, r.p0));
+  ui.p1 = Math.max(ui.p0, Math.min(last, r.p1));
+  ui.prov = (r.prov >= 0 && r.prov < D.prov.length) ? r.prov : -1;
+  ui.aba  = (r.aba  >= 0 && r.aba  < D.aba.length)  ? r.aba  : -1;
+  ui.spec = (r.spec >= 0 && r.spec < D.spec.length) ? r.spec : -1;
+  ui.dis  = (r.dis  >= 0 && r.dis  < D.item.length) ? r.dis  : -1;
+  ui.tab = r.tab || 'dash';
+  render();
+}
+function vSaved(){
+  var all = loadReports(), i;
+  var h = '<div class="card"><h2>Reports</h2><div class="tiny" style="margin-top:6px">' +
+    'A report is a saved question — the tab you were on and the months, province, abattoir ' +
+    'and species you had chosen. Open one and the figures are recalculated from the data in ' +
+    'this file, so a saved report never goes stale.</div>' +
+    '<div class="expbar" style="margin-top:12px"><button class="pri" data-exp="save">' +
+    'Save the current view as a report</button></div></div>';
+  if(!all.length){
+    h += '<div class="empty">No reports saved yet.<br><span class="tiny">Set the filters ' +
+         'the way you want them on any tab, then save.</span></div>';
+    return h;
+  }
+  h += '<div class="card"><h3>Saved on this device</h3><div class="scroll"><table><thead><tr>' +
+       '<th>Report</th><th>Tab</th><th>Selection</th><th>Saved</th><th></th></tr></thead><tbody>';
+  for(i=0;i<all.length;i++){
+    h += '<tr><td><button class="lnk" data-open="'+i+'">'+esc(all[i].name)+'</button></td>' +
+         '<td class="muted">'+esc(tabLabel(all[i].tab))+'</td>' +
+         '<td class="muted" style="font-size:12px">'+esc(all[i].scope||'')+'</td>' +
+         '<td class="muted">'+esc(all[i].saved||'')+'</td>' +
+         '<td class="n"><button class="lnk" data-del="'+i+'" style="color:#a3311f">remove</button></td></tr>';
+  }
+  h += '</tbody></table></div><div class="tiny" style="margin-top:8px">Saved reports live on this ' +
+       'device only. They travel with the browser, not with the file.</div></div>';
+  return h;
+}
+
+/* ---------- views ---------- */
+function speciesSummary(){
+  var dn = denom(), out = {}, i, r, k;
+  function slot(s){ if(!out[s]) out[s] = { sl:0, wc:0, wcM:0, of:0, ofM:0, lr:0 }; return out[s]; }
+  for(i=0;i<D.sl.length;i++){ r=D.sl[i]; if(passes(r)) slot(D.spec[r[2]]).sl += r[3]; }
+  for(i=0;i<D.wc.length;i++){ r=D.wc[i]; if(passes(r)){ var a=slot(D.spec[r[2]]);
+    a.wc += r[4]; if(inDenom(dn,r)) a.wcM += r[4]; } }
+  for(i=0;i<D.of.length;i++){ r=D.of[i]; if(passes(r)){ var b=slot(D.spec[r[2]]);
+    b.of += r[5]; if(inDenom(dn,r)) b.ofM += r[5]; } }
+  for(i=0;i<D.lr.length;i++){ r=D.lr[i]; if(passes(r)) slot(D.spec[r[2]]).lr += r[4]; }
+  var rows = [];
+  for(k in out) if(out.hasOwnProperty(k)) rows.push({ sp:k, v:out[k] });
+  rows.sort(function(x,y){ return y.v.sl - x.v.sl; });
+  return rows;
+}
+
+function vDash(){
+  var sp = speciesSummary(), dn = denom(), i;
+  var totOrg = 0, totWc = 0, totLr = 0;
+  for(i=0;i<sp.length;i++){ totOrg += sp[i].v.of; totWc += sp[i].v.wc; totLr += sp[i].v.lr; }
+  /* With one abattoir selected, "abattoirs reporting: 1" is true and useless — it
+     reads as a fault. Show how many of the chosen months that plant actually filed
+     instead, which is the question you would be asking at that point. */
+  var lastTile;
+  if(ui.aba >= 0){
+    var got = {}, r2, nMonths = 0, kk;
+    for(i=0;i<D.sub.length;i++){
+      r2 = D.sub[i];
+      if(r2[1] === ui.aba && r2[0] >= ui.p0 && r2[0] <= ui.p1) got[r2[0]] = 1;
+    }
+    for(kk in got) if(got.hasOwnProperty(kk)) nMonths++;
+    var span = ui.p1 - ui.p0 + 1;
+    lastTile = '<div class="h"><div class="n">' + fmt(nMonths) + ' of ' + fmt(span) + '</div>' +
+               '<div class="u">months filed by this abattoir</div></div>';
+  } else {
+    var repInScope = 0;
+    for(i=0;i<D.aba.length;i++)
+      if((ui.prov<0 || abaProv(i)===ui.prov) && abaRep(i)) repInScope++;
+    lastTile = '<div class="h"><div class="n">' + fmt(repInScope) + '</div>' +
+               '<div class="u">abattoirs reporting</div></div>';
+  }
+
+  var h = '<div class="card"><h3>ARMS — ' + esc(scopeLine()) + '</h3><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(dn.total) + '</div><div class="u">animals slaughtered</div></div>' +
+    '<div class="h"><div class="n">' + fmt(totWc) + '</div><div class="u">carcasses condemned</div></div>' +
+    '<div class="h"><div class="n">' + fmt(totOrg) + '</div><div class="u">organs condemned</div></div>' +
+    '<div class="h"><div class="n">' + fmt(totLr) + '</div><div class="u">lost in the lairage</div></div>' +
+    lastTile +
+    '</div><div class="tiny">Five figures, <b>three</b> units. Slaughtered and carcasses condemned ' +
+    'are both in <b>head</b> — and the condemned are a share of the slaughtered, which is why a ' +
+    'percentage between those two is legitimate. <b>Organs</b> are a different unit again, and ' +
+    'lairage losses are <b>animals that never reached slaughter at all</b>, so they are not a share ' +
+    'of anything above them. Nothing here is added across.</div></div>';
+
+  h += '<div class="card"><h3>Slaughter figures</h3>' +
+       vbars(bucketTotals(D.sl, 3), 'animals slaughtered', 0) + '</div>';
+
+  h += '<div class="card"><h3>Carcasses condemned, by species</h3>' +
+    '<div class="scroll"><table><thead><tr><th>Species</th><th class="n">Slaughtered</th>' +
+    '<th class="n">Condemned</th><th class="n">Rate</th><th style="width:26%"></th></tr></thead><tbody>';
+  var maxRate = 0;
+  for(i=0;i<sp.length;i++){ var rr = sp[i].v.sl>0 ? sp[i].v.wcM/sp[i].v.sl*100 : 0; if(rr>maxRate) maxRate = rr; }
+  for(i=0;i<sp.length;i++){
+    var v = sp[i].v, rate = v.sl>0 ? v.wcM/v.sl*100 : null;
+    h += '<tr><td>' + esc(sp[i].sp) + '</td>' +
+         '<td class="n">' + (v.sl?fmt(v.sl):'–') + '</td>' +
+         '<td class="n">' + fmt(v.wc) + '</td>' +
+         '<td class="n">' + (rate===null?'–':fmt(rate,3)+'%') + '</td>' +
+         '<td><div class="bar alt"><i style="width:' +
+         (maxRate>0 && rate!==null ? (rate/maxRate*100) : 0) + '%"></i></div></td></tr>';
+  }
+  h += '</tbody></table></div><div class="tiny" style="margin-top:8px">Each species against its own ' +
+       'throughput. A dash means that species was condemned somewhere with no slaughter figure to ' +
+       'divide by — the count still stands, the rate is withheld.</div></div>';
+
+  var organs = tally(D.of, function(r){ return D.organ[r[4]]; }, null);
+  h += '<div class="card"><h3>Organs condemned, by organ</h3>' + barTable(sorted(organs.by), 'organs') + '</div>';
+  h += '<div class="card"><h3>Organs condemned</h3>' + vbars(bucketTotals(D.of, 5), 'organs condemned', 0) + '</div>';
+  h += '<div class="card"><h3>Offal rate</h3>' +
+       lineChart(bucketRate(D.of, 5), 'organs condemned per 100 animals slaughtered', 1) + '</div>';
+  h += '<div class="card"><h3>The ten most condemned — whole carcasses</h3>' +
+       topTenTrend(D.wc, 4, 'head', '#a3311f') + '</div>';
+  h += '<div class="card"><h3>The ten most condemned — offal</h3>' +
+       topTenTrend(D.of, 5, 'organs', '#2e8b63') + '</div>';
+  return h;
+}
+
+function vOffal(){
+  var dn = denom();
+  var organs = tally(D.of, function(r){ return D.organ[r[4]]; }, dn);
+  var conds  = tally(D.of, function(r){ return named(r[3]); }, null);
+  var total  = organs.matched + organs.unmatched;
+  var h = '<div class="card"><h3>Offal condemned — ' + esc(scopeLine()) + '</h3><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(total) + '</div><div class="u">organs condemned</div></div>' +
+    '<div class="h"><div class="n">' + fmt(dn.total) + '</div><div class="u">animals slaughtered</div></div>';
+  var rate = (dn.total>0) ? organs.matched/dn.total*100 : null;
+  h += '<div class="h"><div class="n">' + (rate===null?'–':fmt(rate,1)) + '</div>' +
+       '<div class="u">organs per 100 animals</div></div></div>';
+  if(rate===null)
+    h += '<div class="warnbox">No slaughter figure was reported for this selection, so the rate is ' +
+         'withheld. The organ count above stands on its own.</div>';
+  else if(organs.unmatched > 0)
+    h += '<div class="infobox">The rate is worked out over the ' + fmt(organs.matched) +
+         ' organs whose abattoir, species and month also carry a slaughter figure. A further ' +
+         fmt(organs.unmatched) + ' organs were reported without one and are counted in the total ' +
+         'but left out of the rate.</div>';
+  h += '</div>';
+  h += '<div class="card"><h3>Which organ</h3>' + barTable(sorted(organs.by), 'organs') + '</div>';
+  h += '<div class="card"><h3>Why — top 20 conditions</h3>' + barTable(sorted(conds.by, 20), 'organs') + '</div>';
+  h += '<div class="card"><h3>Organs condemned by organ type, year on year</h3>' +
+       yoyTable(D.of, 5, function(r){ return D.organ[r[4]]; }, 'Organ', 'organs', '#2e8b63', 0) + '</div>';
+  h += '<div class="card"><h3>The ten most condemned, year on year</h3>' +
+       yoyTable(D.of, 5, function(r){ return named(r[3]); }, 'Condition', 'organs', '#2e8b63', 10) + '</div>';
+  h += '<div class="card"><h3>Rate</h3>' +
+       lineChart(bucketRate(D.of, 5), 'organs condemned per 100 animals slaughtered', 1) + '</div>';
+  return h;
+}
+
+function vCarc(){
+  var dn = denom();
+  var t = tally(D.wc, function(r){ return named(r[3]); }, dn);
+  var total = t.matched + t.unmatched;
+  var h = '<div class="card"><h3>Whole carcasses condemned — ' + esc(scopeLine()) + '</h3><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(total) + '</div><div class="u">carcasses condemned</div></div>' +
+    '<div class="h"><div class="n">' + fmt(dn.total) + '</div><div class="u">animals slaughtered</div></div>';
+  var p = (dn.total>0) ? t.matched/dn.total*100 : null;
+  h += '<div class="h"><div class="n">' + (p===null?'–':fmt(p,3)+'%') + '</div>' +
+       '<div class="u">of animals slaughtered</div></div></div>';
+  if(p===null) h += '<div class="warnbox">No slaughter figure for this selection, so the percentage ' +
+    'is withheld.</div>';
+  h += '<div class="tiny">Head only. Kilograms of trimmed meat are a different measure and live ' +
+       'under Trim.</div></div>';
+  h += '<div class="card"><h3>Top 25 reasons</h3>' + barTable(sorted(t.by, 25), 'head', 0, true) + '</div>';
+  h += '<div class="card"><h3>Carcasses condemned by species, year on year</h3>' +
+       yoyTable(D.wc, 4, function(r){ return D.spec[r[2]]; }, 'Species', 'head', '#a3311f', 0) + '</div>';
+  h += '<div class="card"><h3>The ten most condemned, year on year</h3>' +
+       yoyTable(D.wc, 4, function(r){ return named(r[3]); }, 'Disease or condition', 'head', '#a3311f', 10) + '</div>';
+  h += '<div class="card"><h3>Rate</h3>' +
+       lineChart(bucketRate(D.wc, 4), 'carcasses condemned per 100 animals slaughtered', 3) + '</div>';
+  return h;
+}
+
+function vTrim(){
+  var t = tally(D.pc, function(r){ return named(r[3]); }, null);
+  var total = 0, k;
+  for(k in t.by) if(t.by.hasOwnProperty(k)) total += t.by[k];
+  var h = '<div class="card"><h3>Partially condemned — ' + esc(scopeLine()) + '</h3>' +
+    '<div class="hero"><div class="h"><div class="n">' + fmt(total,1) + '</div>' +
+    '<div class="u">kilograms trimmed off</div></div></div>' +
+    '<div class="infobox">This is the only part of the return measured in <b>kilograms</b>. It is ' +
+    'never added to carcass counts or organ counts, and no rate against animal numbers is offered, ' +
+    'because kilograms and animals are not the same thing.</div></div>';
+  h += '<div class="card"><h3>Top 25 reasons</h3>' + barTable(sorted(t.by, 25), 'kg', 1) + '</div>';
+  h += '<div class="card"><h3>Kilograms trimmed</h3>' + vbars(bucketTotals(D.pc, 4), 'kilograms', 1) + '</div>';
+  return h;
+}
+
+function vLair(){
+  var dn = denom();
+  var t = tally(D.lr, function(r){ return D.item[r[3]]; }, dn);
+  var total = t.matched + t.unmatched;
+  var h = '<div class="card"><h3>Lairage losses — ' + esc(scopeLine()) + '</h3><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(total) + '</div>' +
+    '<div class="u">animals lost before slaughter</div></div>';
+  var p = (dn.total>0) ? t.matched/dn.total*100 : null;
+  h += '<div class="h"><div class="n">' + (p===null?'–':fmt(p,3)+'%') + '</div>' +
+       '<div class="u">of animals slaughtered</div></div></div>';
+  h += '<div class="warnbox"><b>These are not condemnations.</b> An animal that arrived dead or died ' +
+       'in the pens never reached inspection. The old NAHDIS reports counted these in the disease ' +
+       'summary — dead on arrival, presented as a disease. They are kept apart here.</div></div>';
+  h += '<div class="card"><h3>What happened</h3>' + barTable(sorted(t.by), 'animals', 0, true) + '</div>';
+  h += '<div class="card"><h3>Lairage losses</h3>' + vbars(bucketTotals(D.lr, 4), 'animals lost', 0, '#a3311f') + '</div>';
+  return h;
+}
+
+function vThru(){
+  var bySpec = tally(D.sl, function(r){ return D.spec[r[2]]; }, null);
+  var byAba  = tally(D.sl, function(r){ return abaName(r[1]); }, null);
+  var total = 0, k;
+  for(k in bySpec.by) if(bySpec.by.hasOwnProperty(k)) total += bySpec.by[k];
+  var h = '<div class="card"><h3>Throughput — ' + esc(scopeLine()) + '</h3>' +
+    '<div class="hero"><div class="h"><div class="n">' + fmt(total) + '</div>' +
+    '<div class="u">animals slaughtered</div></div></div>' +
+    '<div class="tiny">Taken from the returns themselves, not from the registration certificate. ' +
+    'This is the denominator every rate in this program uses.</div></div>';
+  h += '<div class="card"><h3>By species</h3>' + barTable(sorted(bySpec.by), 'head') + '</div>';
+  /* Months must come out in calendar order. Rows arrive from the fact table in no
+     particular order, so first-seen order is meaningless -- hand crossTab the
+     bucket sequence to sort by. */
+  var bkT = buckets(), bkM = bucketMap(bkT), rank = {}, bi;
+  for(bi=0;bi<bkT.length;bi++) rank[bkT[bi].label] = bi;
+  h += crossTab('Month by month — total head, and each species beside it',
+        function(r){ return bkM.hasOwnProperty(r[0]) ? bkT[bkM[r[0]]].label : null; },
+        'Month', rank);
+  h += crossTab('By abattoir — total head, and each species beside it',
+        function(r){ return abaName(r[1]); }, 'Abattoir', null);
+  h += '<div class="card"><h3>Slaughtered</h3>' + vbars(bucketTotals(D.sl, 3), 'animals slaughtered', 0) + '</div>';
+  return h;
+}
+
+/* Total head with each species in its own column beside it. Every column here is
+   the same unit -- head -- so the Total genuinely is the sum of the row. This is
+   the one place in the program where adding across a row is correct, and it is
+   correct precisely because nothing of a different unit is allowed into the table. */
+function crossTab(title, rowKeyFn, label, rank){
+  var grid = {}, order = [], specs = {}, i, r, k, sp;
+  for(i=0;i<D.sl.length;i++){
+    r = D.sl[i];
+    if(!passes(r)) continue;
+    k = rowKeyFn(r);
+    if(k===null) continue;
+    sp = D.spec[r[2]];
+    if(!grid.hasOwnProperty(k)){ grid[k] = { total:0 }; order.push(k); }
+    if(!grid[k].hasOwnProperty(sp)) grid[k][sp] = 0;
+    grid[k][sp] += r[3];
+    grid[k].total += r[3];
+    specs[sp] = (specs[sp]||0) + r[3];
+  }
+  if(!order.length) return '';
+  var cols = [];
+  for(k in specs) if(specs.hasOwnProperty(k)) cols.push([k, specs[k]]);
+  cols.sort(function(x,y){ return y[1]-x[1]; });
+  if(rank){
+    /* calendar order, taken from the bucket sequence -- never first-seen order */
+    order.sort(function(x,y){ return (rank[x]===undefined?1e9:rank[x]) - (rank[y]===undefined?1e9:rank[y]); });
+  } else {
+    /* Every abattoir, not a top 30. A throughput table that silently stops at
+       thirty is a different document from the one it claims to be, and it prints
+       across as many A4 pages as it needs. */
+    order.sort(function(x,y){ return grid[y].total - grid[x].total; });
+  }
+  var h = '<div class="card"><h3>' + esc(title) + '</h3><div class="scroll"><table><thead><tr>' +
+    '<th>' + esc(label) + '</th><th class="n">Total head</th>';
+  for(i=0;i<cols.length;i++) h += '<th class="n">' + esc(cols[i][0]) + '</th>';
+  h += '</tr></thead><tbody>';
+  var shown = 0;
+  for(i=0;i<order.length;i++){
+    var row = grid[order[i]];
+    shown += row.total;
+    h += '<tr><td>' + esc(order[i]) + '</td><td class="n"><b>' + fmt(row.total) + '</b></td>';
+    for(var j=0;j<cols.length;j++){
+      var v = row[cols[j][0]];
+      /* A species this abattoir does not slaughter is blank, not zero. It did not
+         report nil -- it has no such line at all. */
+      h += '<td class="n">' + (v===undefined ? '<span class="muted">·</span>' : fmt(v)) + '</td>';
+    }
+    h += '</tr>';
+  }
+  h += '<tr style="background:#f4f7f5"><td><b>Total</b></td>' +
+       '<td class="n"><b>' + fmt(shown) + '</b></td>';
+  for(i=0;i<cols.length;i++){
+    var ct = 0;
+    for(j=0;j<order.length;j++){ var vv = grid[order[j]][cols[i][0]]; if(vv!==undefined) ct += vv; }
+    h += '<td class="n"><b>' + fmt(ct) + '</b></td>';
+  }
+  h += '</tr></tbody></table></div>' +
+    '<div class="tiny" style="margin-top:6px"><b>' + fmt(order.length) + ' rows, all of them</b> — ' +
+    'nothing is trimmed off this table, and it prints across as many A4 pages as it needs with the ' +
+    'column headings repeated on each. A dot means that species was never reported here, not that ' +
+    'it was reported as nil.</div></div>';
+  return h;
+}
+
+function vCover(){
+  var i, byProv = {}, byTp = {}, totReg = 0, totRep = 0;
+  for(i=0;i<D.aba.length;i++){
+    if(ui.prov >= 0 && abaProv(i) !== ui.prov) continue;
+    var p = D.prov[abaProv(i)], t = D.tp[abaTp(i)];
+    if(!byProv[p]) byProv[p] = { reg:0, rep:0 };
+    if(!byTp[t])   byTp[t]   = { reg:0, rep:0 };
+    byProv[p].reg++; byTp[t].reg++; totReg++;
+    if(abaRep(i)){ byProv[p].rep++; byTp[t].rep++; totRep++; }
+  }
+  var h = '<div class="card"><h3>Coverage of the national register</h3><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(totReg) + '</div><div class="u">abattoirs registered</div></div>' +
+    '<div class="h"><div class="n">' + fmt(totRep) + '</div><div class="u">have submitted a return</div></div>' +
+    '<div class="h"><div class="n">' + fmt(totReg-totRep) + '</div><div class="u">silent — none on record</div></div>' +
+    '<div class="h"><div class="n">' + (totReg>0?fmt(totRep/totReg*100,1)+'%':'–') + '</div>' +
+    '<div class="u">of the register reporting</div></div></div>';
+  h += '<div class="warnbox"><b>Every abattoir must hand a Schedule 8 to the Provincial Executive ' +
+    'Officer of its province, every month.</b> The duty is universal — it does not depend on who ' +
+    'does the meat inspection. So this is not a table of customers. It is a table of a statutory ' +
+    'return, and ' + fmt(totReg-totRep) + ' of ' + fmt(totReg) + ' abattoirs have none of it on ' +
+    'record here.</div>';
+  h += '<div class="infobox">Said precisely, because the difference matters in front of a department: ' +
+    'this counts returns that <b>reached ARMS</b>. An abattoir shown as silent may well be filing ' +
+    'paper to its own PEO every month — what is certain is that its return never reached a ' +
+    'national system. <b>The duty is national; the reporting stops at the province; and so nobody ' +
+    'can see the whole.</b> That is the gap this system exists to close.<br><br>Counted over the ' +
+    'whole data file, not the selected months, because “has never submitted” is a statement ' +
+    'about all of it. The count is of abattoirs, not animals, and is never mixed with the head, ' +
+    'kilogram or organ figures on the other tabs.</div></div>';
+  function covTable(obj, label){
+    var a = [], kk;
+    for(kk in obj) if(obj.hasOwnProperty(kk)) a.push([kk, obj[kk]]);
+    a.sort(function(x,y){ return y[1].reg - x[1].reg; });
+    var s = '<div class="scroll"><table><thead><tr><th>' + esc(label) + '</th>' +
+      '<th class="n">Registered</th><th class="n">Reporting</th><th class="n">Silent</th>' +
+      '<th class="n">Covered</th><th style="width:22%"></th></tr></thead><tbody>';
+    for(var j=0;j<a.length;j++){
+      var v = a[j][1], p2 = v.reg>0 ? v.rep/v.reg*100 : 0;
+      s += '<tr><td>' + esc(a[j][0]) + '</td><td class="n">' + fmt(v.reg) + '</td>' +
+           '<td class="n">' + fmt(v.rep) + '</td><td class="n">' + fmt(v.reg-v.rep) + '</td>' +
+           '<td class="n">' + fmt(p2,1) + '%</td>' +
+           '<td><div class="bar"><i style="width:' + p2 + '%"></i></div></td></tr>';
+    }
+    return s + '</tbody></table></div>';
+  }
+  h += '<div class="card"><h3>By province</h3>' + covTable(byProv, 'Province') + '</div>';
+  h += '<div class="card"><h3>By throughput category</h3>' + covTable(byTp, 'Category') +
+       '<div class="tiny" style="margin-top:8px">HT high throughput · LT low throughput · ' +
+       'RT rural throughput. Taken from the registration record, not from the returns.</div></div>';
+  h += subGrid();
+  return h;
+}
+
+/* ---------- who filed, and for which months ----------
+   A month-by-month grid for the selected period. Unlike everything else on this
+   page it counts returns at EVERY status, because a return sitting half-finished
+   is the most useful thing a manager can see: somebody started and stopped, which
+   is a different problem from never starting. */
+function subGrid(){
+  var months = [], i, j, r;
+  for(i=ui.p0;i<=ui.p1;i++) months.push(i);
+  if(!months.length) return '';
+  if(months.length > 24)
+    return '<div class="card"><h3>Who submitted, month by month</h3><div class="infobox">' +
+      'That is ' + months.length + ' months — too wide to read. Narrow the From and To boxes ' +
+      'to two years or less and the grid appears here.</div></div>';
+
+  var cell = {}, seen = {};
+  for(i=0;i<D.sub.length;i++){
+    r = D.sub[i];
+    if(r[0] < ui.p0 || r[0] > ui.p1) continue;
+    if(ui.prov >= 0 && abaProv(r[1]) !== ui.prov) continue;
+    if(ui.aba  >= 0 && r[1] !== ui.aba) continue;
+    cell[r[1]+'|'+r[0]] = r[2];
+    seen[r[1]] = 1;
+  }
+  var list = [], k;
+  for(k in seen) if(seen.hasOwnProperty(k)) list.push(parseInt(k,10));
+  list.sort(function(x,y){ return abaName(x) < abaName(y) ? -1 : (abaName(x) > abaName(y) ? 1 : 0); });
+
+  /* how many on the register filed nothing at all in this window */
+  var inScope = 0;
+  for(i=0;i<D.aba.length;i++){
+    if(ui.prov >= 0 && abaProv(i) !== ui.prov) continue;
+    if(ui.aba  >= 0 && i !== ui.aba) continue;
+    inScope++;
+  }
+
+  var MARK = { 3:'<span title="approved" style="color:#1d6b4f;font-weight:700">●</span>',
+               2:'<span title="submitted, awaiting approval" style="color:#b8860b;font-weight:700">◐</span>',
+               1:'<span title="started, still in progress" style="color:#a3311f;font-weight:700">◯</span>' };
+  var nApp = 0, nSub = 0, nProg = 0;
+
+  var h = '<div class="card"><h3>Who submitted, month by month — ' +
+    esc(perPretty(ui.p0)) + (ui.p0===ui.p1 ? '' : ' to ' + esc(perPretty(ui.p1))) + '</h3>';
+  h += '<div class="tiny" style="margin-bottom:10px">' +
+    MARK[3] + ' approved &nbsp; ' + MARK[2] + ' submitted, waiting on approval &nbsp; ' +
+    MARK[1] + ' started, still in progress &nbsp; · blank means nothing was filed for that month.</div>';
+  h += '<div class="scroll"><table><thead><tr><th>Abattoir</th><th>Province</th>';
+  for(j=0;j<months.length;j++)
+    h += '<th class="n" style="padding:7px 4px">' + esc(perShort(months[j]).split(' ')[0]) +
+         (months.length>12 ? '<br><span style="font-weight:400">'+esc(perYear(months[j]).slice(2))+'</span>' : '') +
+         '</th>';
+  h += '<th class="n">Filed</th></tr></thead><tbody>';
+  for(i=0;i<list.length;i++){
+    var a = list[i], filed = 0, row = '';
+    for(j=0;j<months.length;j++){
+      var st = cell[a+'|'+months[j]];
+      if(st){ filed++; if(st===3) nApp++; else if(st===2) nSub++; else nProg++; }
+      row += '<td class="n" style="padding:7px 4px">' + (st ? MARK[st] : '<span class="muted">·</span>') + '</td>';
+    }
+    h += '<tr><td>' + esc(abaName(a)) + '</td><td class="muted">' + esc(D.prov[abaProv(a)]) + '</td>' +
+         row + '<td class="n"><b>' + filed + '</b>/' + months.length + '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<div class="tiny" style="margin-top:10px"><b>' + fmt(list.length) + '</b> of <b>' +
+    fmt(inScope) + '</b> abattoirs on the register filed something in this window; <b>' +
+    fmt(inScope - list.length) + '</b> filed nothing at all. Of the returns that exist: ' +
+    fmt(nApp) + ' approved, ' + fmt(nSub) + ' waiting on approval, ' + fmt(nProg) +
+    ' started but never finished.</div>';
+  if(nProg) h += '<div class="warnbox" style="margin:10px 0 0"><b>' + fmt(nProg) +
+    ' returns were started and never finished.</b> Those months look like non-submission from ' +
+    'the outside, but somebody at the abattoir began the work. They are the easiest ones to chase.</div>';
+  h += '</div>';
+  return h;
+}
+
+function vAba(){
+  var sl = {}, of = {}, wc = {}, lr = {}, i, r;
+  for(i=0;i<D.sl.length;i++){ r=D.sl[i]; if(passes(r)) sl[r[1]] = (sl[r[1]]||0)+r[3]; }
+  for(i=0;i<D.of.length;i++){ r=D.of[i]; if(passes(r)) of[r[1]] = (of[r[1]]||0)+r[5]; }
+  for(i=0;i<D.wc.length;i++){ r=D.wc[i]; if(passes(r)) wc[r[1]] = (wc[r[1]]||0)+r[4]; }
+  for(i=0;i<D.lr.length;i++){ r=D.lr[i]; if(passes(r)) lr[r[1]] = (lr[r[1]]||0)+r[4]; }
+  var rows = [], nRep = 0, nSilent = 0, nNone = 0;
+  for(i=0;i<D.aba.length;i++){
+    if(ui.prov >= 0 && abaProv(i) !== ui.prov) continue;
+    if(ui.aba  >= 0 && i !== ui.aba) continue;
+    var ever = abaRep(i), s = sl[i]||0, o = of[i]||0, w = wc[i]||0, l = lr[i]||0;
+    var any = (s||o||w||l) ? true : false;
+    if(!ever) nSilent++; else { nRep++; if(!any) nNone++; }
+    rows.push({ a:i, ever:ever, any:any, sl:s, of:o, wc:w, lr:l, rate:(any && s>0) ? o/s*100 : null });
+  }
+  rows.sort(function(x,y){
+    if(x.any !== y.any) return x.any ? -1 : 1;
+    if(x.ever !== y.ever) return x.ever ? -1 : 1;
+    if(x.rate===null && y.rate===null) return y.of - x.of;
+    if(x.rate===null) return 1;
+    if(y.rate===null) return -1;
+    return y.rate - x.rate;
+  });
+  var h = '<div class="card"><h3>The national register — ' + esc(scopeLine()) + '</h3>' +
+    '<div class="tiny">Every registered abattoir in scope, sorted by organs condemned per 100 ' +
+    'animals. <b>A dash is not a zero.</b> An abattoir that has never submitted, or that submitted ' +
+    'nothing in this period, has not reported nil — it has not reported.</div>' +
+    '<div class="scroll" style="margin-top:10px"><table><thead><tr>' +
+    '<th>Abattoir</th><th>RC no</th><th>Province</th><th>Type</th><th class="n">Slaughtered</th>' +
+    '<th class="n">Organs</th><th class="n">Organs/100</th><th class="n">Carcasses</th>' +
+    '<th class="n">Lairage</th></tr></thead><tbody>';
+  for(i=0;i<rows.length;i++){
+    var v = rows[i];
+    var note = v.ever ? (v.any ? '' : 'nothing in this period') : 'never submitted';
+    h += '<tr><td><button class="lnk" data-goaba="'+v.a+'">'+esc(abaName(v.a))+'</button>' +
+         (note ? ' <span class="muted" style="font-size:11.5px">— '+esc(note)+'</span>' : '') +
+         formerNote(v.a) + '</td>' +
+         '<td class="muted" style="white-space:nowrap">'+esc(abaRc(v.a))+'</td>' +
+         '<td class="muted">'+esc(D.prov[abaProv(v.a)])+'</td>' +
+         '<td class="muted">'+esc(D.tp[abaTp(v.a)])+'</td>' +
+         '<td class="n">'+(v.any && v.sl ? fmt(v.sl) : '–')+'</td>' +
+         '<td class="n">'+(v.any ? fmt(v.of) : '–')+'</td>' +
+         '<td class="n">'+(v.rate===null?'–':fmt(v.rate,1))+'</td>' +
+         '<td class="n">'+(v.any ? fmt(v.wc) : '–')+'</td>' +
+         '<td class="n">'+(v.any ? fmt(v.lr) : '–')+'</td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  h += '<div class="tiny" style="padding:0 4px">' + fmt(rows.length) + ' abattoirs on the register ' +
+       'in this scope · ' + fmt(nRep) + ' have reported at some point · ' + fmt(nSilent) +
+       ' never have' + (nNone ? ' · ' + fmt(nNone) + ' report in other months but not these' : '') +
+       '. Columns are four different measures and are never totalled across.</div>';
+  return h;
+}
+
+/* ---------- controlled and notifiable diseases ----------
+   Animal Diseases Act 35 of 1984 and the Animal Diseases Regulations R.2026 of
+   1986, as published by the Department (Directorate: Animal Health).
+
+   The Schedule 8 form puts all of these in ONE group called "Controlled Animal
+   Diseases Zoonoses". The law does not: controlled and notifiable are different
+   categories carrying different duties, and six of the diseases on that form group
+   are notifiable rather than controlled. ARMS shows the legal category, not the
+   form's grouping, because it is the category that decides what a vet must do.
+
+   Section 11: a veterinarian or ANY OTHER PERSON who finds the incidence OR
+   SUSPECTED incidence of a controlled disease shall IMMEDIATELY report it. */
+var CONTROLLED = [
+ 'African horse sickness (AHS)','African Swine Fever (ASF)','Anthrax',"Aujeszky's disease",
+ 'Bacterial Kidney Disease (in fish)','Bovine Contagious Pleuropneumonia (CBPP)',
+ 'Bovine spongiform encephalopathy (BSE)','Brucellosis (in all animal species)',
+ 'Classical Swine Fever (CSF)','Contagious Equine Metritis (CEM)',
+ 'Contagious Haemopoeitic Necrosis (in fish)','Contagious Pancreatic Necrosis (in fish)',
+ 'Corridor or Buffalo disease (Theileriosis)','Dourine','East Coast Fever',
+ 'Equine Infectious Anaemia (EIA)','Equine Influenza (EI)','Equine Viral Arteritis (EVA)',
+ 'Foot-and-mouth Disease (FMD)','Glanders','Haemorrhagic Septicaemia (in fish)',
+ "Johne's disease (in sheep, cattle and goats)",'Koi Herpes Virus','Nagana (Trypanosomiasis)',
+ 'Newcastle disease','Notifiable Avian Influenza (NAI)',
+ 'Porcine Reproductive and Respiratory Syndrome (PRRS)','Psittacosis','Rabies','Rinderpest',
+ 'Salmonella Enteritidis','Salmonella Gallinarum (Fowl typhoid)',
+ 'Salmonella Pullorum (Bacillary white diarrhoea)','Scrapie','Sheep scab',
+ 'Skin conditions in sheep','Swine vesicular disease','Tuberculosis'
+];
+var NOTIFIABLE = [
+ 'Bovine Malignant Catarrhal Fever (Snotsiekte)','Bluetongue','Lumpy Skin Disease',
+ 'Rift Valley Fever','Strangles','Swine Erysipelas'
+];
+/* Match on a squashed key so the form's spelling and the Act's spelling meet:
+   "Lumpy skin disease" and "Lumpy Skin Disease" are the same duty. */
+function dkey(s){ return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,''); }
+var LEGAL = {};
+(function(){
+  var i;
+  for(i=0;i<CONTROLLED.length;i++) LEGAL[dkey(CONTROLLED[i])] = 'controlled';
+  for(i=0;i<NOTIFIABLE.length;i++) LEGAL[dkey(NOTIFIABLE[i])] = 'notifiable';
+  /* The form writes plain "Erysipelas"; the Act says Swine Erysipelas. Same duty. */
+  LEGAL[dkey('Erysipelas')] = 'notifiable';
+})();
+function legalClass(name){ return LEGAL[dkey(name)] || null; }
+function legalBadge(name){
+  var c = legalClass(name);
+  if(c === 'controlled')
+    return ' <span class="pill ctrl" title="Controlled disease — Animal Diseases Act 35 of 1984">CONTROLLED</span>';
+  if(c === 'notifiable')
+    return ' <span class="pill notif" title="Notifiable disease — Animal Diseases Act 35 of 1984">NOTIFIABLE</span>';
+  return '';
+}
+
+/* ---------- diseases ----------
+   Filters read in the order they are asked for: from, to, province, abattoir,
+   species, disease. One disease can appear in three different units -- carcasses
+   condemned in HEAD, meat trimmed in KILOGRAMS, organs condemned in ORGANS -- so
+   they are counted and shown as three separate figures and never summed. */
+/* Some returns carry a "disease" typed as ? or ??? -- an inspector filling the free
+   text box with nothing. A name with no letter or digit in it names nothing, so it
+   is kept out of every disease list and the volume behind it is disclosed instead.
+   The rows are untouched in the database; they are simply not offered as an answer. */
+function named(ix){
+  var s = D.item[ix];
+  return (typeof s === 'string' && /[A-Za-z0-9]/.test(s)) ? s : null;
+}
+function unnamedVolume(){
+  var wc = 0, of = 0, i, r;
+  for(i=0;i<D.wc.length;i++){ r=D.wc[i]; if(passes(r) && named(r[3])===null) wc += r[4]; }
+  for(i=0;i<D.of.length;i++){ r=D.of[i]; if(passes(r) && named(r[3])===null) of += r[5]; }
+  return { wc:wc, of:of };
+}
+function disMatch(row){ return ui.dis < 0 || row[3] === ui.dis; }
+function disTally(rows, valIx, keyFn){
+  var out = {}, i, r, k;
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(!passes(r) || !disMatch(r)) continue;
+    k = keyFn(r);
+    if(k===null) continue;
+    if(!out.hasOwnProperty(k)) out[k] = 0;
+    out[k] += r[valIx];
+  }
+  return out;
+}
+function sumOf(obj){ var t = 0, k; for(k in obj) if(obj.hasOwnProperty(k)) t += obj[k]; return t; }
+
+function vDis(){
+  var h = '';
+  if(ui.dis < 0){
+    /* No disease chosen yet: rank them so the user can see what there is to ask about. */
+    var wcAll = disTally(D.wc, 4, function(r){ var n2=named(r[3]); return n2===null?null:n2; });
+    var ofAll = disTally(D.of, 5, function(r){ return named(r[3]); });
+    var un = unnamedVolume();
+    h += '<div class="card"><h3>Diseases and conditions — ' + esc(scopeLine()) + '</h3>' +
+      '<div class="infobox">Pick a disease in the filter bar to follow it through province, ' +
+      'abattoir, species and month. The two lists below are counted in <b>different units</b> ' +
+      'and are not comparable with each other: carcasses are whole animals, organs are organs.' +
+      '</div></div>';
+    h += '<div class="card"><h3>By carcasses condemned — head</h3>' +
+         barTable(sorted(wcAll, 25), 'head', 0, true) + '</div>';
+    h += '<div class="card"><h3>By organs condemned — organs</h3>' +
+         barTable(sorted(ofAll, 25), 'organs') + '</div>';
+    if(un.wc || un.of)
+      h += '<div class="card"><h3>Held back</h3><div class="warnbox" style="margin:0">' +
+        'A further <b>' + fmt(un.wc) + '</b> carcasses and <b>' + fmt(un.of) + '</b> organs were ' +
+        'condemned against a name that says nothing — a free-text box filled in with question ' +
+        'marks. They are counted in the Offal and Carcasses totals but cannot be attributed to any ' +
+        'disease, so they are not listed above. The returns are untouched; the name is the problem, ' +
+        'and it can only be fixed at the abattoir.</div></div>';
+    return h;
+  }
+
+  var name = D.item[ui.dis];
+  var wcTot = sumOf(disTally(D.wc, 4, function(){ return 'x'; }));
+  var ofTot = sumOf(disTally(D.of, 5, function(){ return 'x'; }));
+  var pcTot = sumOf(disTally(D.pc, 4, function(){ return 'x'; }));
+  var abaSet = {}, i, r;
+  for(i=0;i<D.wc.length;i++){ r=D.wc[i]; if(passes(r) && disMatch(r)) abaSet[r[1]] = 1; }
+  for(i=0;i<D.of.length;i++){ r=D.of[i]; if(passes(r) && disMatch(r)) abaSet[r[1]] = 1; }
+  var nAba = 0, kk;
+  for(kk in abaSet) if(abaSet.hasOwnProperty(kk)) nAba++;
+
+  h += '<div class="card"><h2>' + esc(name) + legalBadge(name) + '</h2>' +
+    '<div class="tiny" style="margin:4px 0 10px">' + esc(scopeLine()) + '</div><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(wcTot) + '</div><div class="u">carcasses condemned (head)</div></div>' +
+    '<div class="h"><div class="n">' + fmt(ofTot) + '</div><div class="u">organs condemned</div></div>' +
+    '<div class="h"><div class="n">' + fmt(pcTot,1) + '</div><div class="u">kilograms trimmed</div></div>' +
+    '<div class="h"><div class="n">' + fmt(nAba) + '</div><div class="u">abattoirs reporting it</div></div>' +
+    '</div><div class="tiny">Three units, three figures, never added. An organ condemned is not ' +
+    'an animal lost.</div></div>';
+
+  if(!wcTot && !ofTot && !pcTot)
+    h += '<div class="warnbox">Nothing was reported for ' + esc(name) + ' in this selection. ' +
+         'That is an absence of returns, not a finding of zero.</div>';
+
+  /* A controlled or notifiable disease with actual cases carries a legal duty, so
+     say so on the screen and put the means to act on it right there. */
+  var lc = legalClass(name);
+  if(lc && (wcTot || ofTot || pcTot)){
+    h += '<div class="warnbox"><b>' + esc(name) + ' is a ' + lc.toUpperCase() +
+      ' disease under the Animal Diseases Act 35 of 1984.</b><br><br>' +
+      (lc === 'controlled'
+        ? 'Section 11 requires a veterinarian, or any other person who finds the incidence ' +
+          '<b>or suspected incidence</b>, to report it <b>immediately</b> to the state veterinarian ' +
+          'of that area. Suspicion alone triggers the duty — a laboratory result is not needed first.'
+        : 'It is reportable to the state veterinarian of the area.') +
+      '<br><br>These figures come off a monthly return and are <b>not</b> the notification. ' +
+      'If this has not already been reported on the day it was found, it is late.' +
+      '</div><div class="expbar"><button class="pri" data-exp="alert">Write the notification</button>' +
+      '<span class="note">names the abattoirs, the species and the numbers below</span></div>';
+  }
+
+  function pair(title, wcBy, ofBy, label){
+    var keys = {}, k2, rows = [], maxA = 0;
+    for(k2 in wcBy) if(wcBy.hasOwnProperty(k2)) keys[k2] = 1;
+    for(k2 in ofBy) if(ofBy.hasOwnProperty(k2)) keys[k2] = 1;
+    for(k2 in keys) if(keys.hasOwnProperty(k2)) rows.push([k2, wcBy[k2]||0, ofBy[k2]||0]);
+    rows.sort(function(x,y){ return (y[2]+y[1]) - (x[2]+x[1]); });
+    for(var j=0;j<rows.length;j++) if(rows[j][2] > maxA) maxA = rows[j][2];
+    if(!rows.length) return '';
+    var s = '<div class="card"><h3>' + esc(title) + '</h3><div class="scroll"><table><thead><tr>' +
+      '<th>' + esc(label) + '</th><th class="n">Carcasses (head)</th><th class="n">Organs</th>' +
+      '<th style="width:24%"></th></tr></thead><tbody>';
+    for(j=0;j<rows.length;j++)
+      s += '<tr><td>' + esc(rows[j][0]) + '</td><td class="n">' + fmt(rows[j][1]) + '</td>' +
+           '<td class="n">' + fmt(rows[j][2]) + '</td>' +
+           '<td><div class="bar"><i style="width:' + (maxA>0?(rows[j][2]/maxA*100):0) + '%"></i></div></td></tr>';
+    return s + '</tbody></table></div></div>';
+  }
+
+  h += pair('By province',
+        disTally(D.wc, 4, function(r){ return D.prov[abaProv(r[1])]; }),
+        disTally(D.of, 5, function(r){ return D.prov[abaProv(r[1])]; }), 'Province');
+  h += pair('By abattoir',
+        disTally(D.wc, 4, function(r){ return abaName(r[1]); }),
+        disTally(D.of, 5, function(r){ return abaName(r[1]); }), 'Abattoir');
+  h += pair('By species',
+        disTally(D.wc, 4, function(r){ return D.spec[r[2]]; }),
+        disTally(D.of, 5, function(r){ return D.spec[r[2]]; }), 'Species');
+
+  if(ofTot){
+    var byOrgan = disTally(D.of, 5, function(r){ return D.organ[r[4]]; });
+    h += '<div class="card"><h3>Which organ</h3>' + barTable(sorted(byOrgan), 'organs') + '</div>';
+  }
+  /* Over time: counts, not rates. A single disease against total throughput would
+     be a rate over a population that mostly never had it. */
+  var bk = buckets(), m = bucketMap(bk), wcSeries = [], ofSeries = [], j2;
+  for(j2=0;j2<bk.length;j2++){ wcSeries.push(0); ofSeries.push(0); }
+  for(i=0;i<D.wc.length;i++){ r=D.wc[i];
+    if(m.hasOwnProperty(r[0]) && passesNoPeriod(r) && disMatch(r)) wcSeries[m[r[0]]] += r[4]; }
+  for(i=0;i<D.of.length;i++){ r=D.of[i];
+    if(m.hasOwnProperty(r[0]) && passesNoPeriod(r) && disMatch(r)) ofSeries[m[r[0]]] += r[5]; }
+  var wcPairs = [], ofPairs = [];
+  for(j2=0;j2<bk.length;j2++){ wcPairs.push([bk[j2].label, wcSeries[j2]]);
+                               ofPairs.push([bk[j2].label, ofSeries[j2]]); }
+  if(wcTot) h += '<div class="card"><h3>Carcasses condemned over time</h3>' +
+    vbars(wcPairs, 'carcasses condemned (head)', 0, '#a3311f') + '</div>';
+  if(ofTot) h += '<div class="card"><h3>Organs condemned over time</h3>' +
+    vbars(ofPairs, 'organs condemned', 0) + '</div>';
+  return h;
+}
+
+/* ---------- comparison ----------
+   One abattoir against its province and against the country. Every figure is a
+   WEIGHTED average: total condemned over total slaughtered, so a plant killing
+   400 000 head counts for what it is and a small one does not drag the average
+   about. It is not an average of rates -- that would weight every abattoir the
+   same regardless of size, which is the classic way to make a small plant with
+   one bad month look like a provincial crisis.
+
+   Denominators are matched: only abattoir-species-months carrying a slaughter
+   figure go into either side of any ratio. */
+/* THE AVERAGE IS ACROSS ABATTOIRS, NOT ACROSS ANIMALS.
+   Louis, 16 Aug 2026: a condemnation ratio is not a price and cannot be weighted.
+   A weighted average — total condemned over total slaughtered — answers "what is
+   the national burden", and there the biggest plants set the figure. That is the
+   wrong yardstick for judging one abattoir: it means every small plant is measured
+   against whatever the few giants happen to do.
+   So each abattoir's own rate is worked out first, and those rates are averaged,
+   one abattoir one vote.
+   An abattoir that slaughtered and reported none of a disease counts as a ZERO in
+   that disease's average -- leaving it out would average only the plants that had
+   it, which inflates the benchmark enormously. */
+function scopeRates(rows, valIx, filterFn){
+  var perAba = {}, i, r, k, a;
+  /* denominator per abattoir */
+  for(i=0;i<D.sl.length;i++){
+    r = D.sl[i];
+    if(r[0] < ui.p0 || r[0] > ui.p1) continue;
+    if(ui.spec >= 0 && r[2] !== ui.spec) continue;
+    if(!filterFn(r)) continue;
+    if(!perAba.hasOwnProperty(r[1])) perAba[r[1]] = { den:0, num:{}, keys:{} };
+    perAba[r[1]].den += r[3];
+    perAba[r[1]].keys[r[0]+'|'+r[2]] = 1;
+  }
+  /* numerators per abattoir, only where that abattoir has a denominator */
+  for(i=0;i<rows.length;i++){
+    r = rows[i];
+    if(r[0] < ui.p0 || r[0] > ui.p1) continue;
+    if(ui.spec >= 0 && r[2] !== ui.spec) continue;
+    if(!filterFn(r)) continue;
+    if(!perAba.hasOwnProperty(r[1])) continue;
+    if(!perAba[r[1]].keys.hasOwnProperty(r[0]+'|'+r[2])) continue;
+    k = named(r[3]);
+    if(k === null) continue;
+    if(!perAba[r[1]].num.hasOwnProperty(k)) perAba[r[1]].num[k] = 0;
+    perAba[r[1]].num[k] += r[valIx];
+  }
+  /* average the abattoir rates, counting a silent-on-this-disease plant as zero */
+  var everyKey = {}, nAba = 0, totalDen = 0;
+  for(a in perAba) if(perAba.hasOwnProperty(a) && perAba[a].den > 0){
+    nAba++; totalDen += perAba[a].den;
+    for(k in perAba[a].num) if(perAba[a].num.hasOwnProperty(k)) everyKey[k] = 1;
+  }
+  var avg = {}, counts = {};
+  for(k in everyKey) if(everyKey.hasOwnProperty(k)){
+    var sum = 0;
+    for(a in perAba) if(perAba.hasOwnProperty(a) && perAba[a].den > 0)
+      sum += ((perAba[a].num[k] || 0) / perAba[a].den * 100);
+    avg[k] = nAba > 0 ? sum / nAba : null;
+    counts[k] = nAba;
+  }
+  return { num:avg, den:totalDen, nAba:nAba, perAba:perAba };
+}
+/* one abattoir's own rate for a given item, straight -- no averaging involved */
+function ownRate(sr, abaIdx, key){
+  var p = sr.perAba[abaIdx];
+  if(!p || !p.den) return null;
+  return (p.num[key] || 0) / p.den * 100;
+}
+function vCompare(){
+  if(ui.aba < 0)
+    return '<div class="card"><h2>Compare an abattoir</h2><div class="infobox" style="margin:10px 0 0">' +
+      'Choose an abattoir in the bar above. This screen then puts its condemnation rate beside ' +
+      'the <b>average abattoir</b> in its province and in the country, so you can see whether ' +
+      'a plant is out of step with its neighbours or simply busy.</div></div>';
+  if(!abaRep(ui.aba)) return silentPanel();
+
+  var me = ui.aba, provIx2 = abaProv(me), provName = D.prov[provIx2];
+  var mine = { wc: scopeRates(D.wc, 4, function(r){ return r[1] === me; }),
+               of: scopeRates(D.of, 5, function(r){ return r[1] === me; }) };
+  var prov = { wc: scopeRates(D.wc, 4, function(r){ return abaProv(r[1]) === provIx2; }),
+               of: scopeRates(D.of, 5, function(r){ return abaProv(r[1]) === provIx2; }) };
+  var natl = { wc: scopeRates(D.wc, 4, function(){ return true; }),
+               of: scopeRates(D.of, 5, function(){ return true; }) };
+
+  var h = '<div class="card"><h2>' + esc(abaName(me)) + ' — RC ' + esc(abaRc(me)) + '</h2>' +
+    '<div class="tiny" style="margin:4px 0 10px">' + esc(scopeLine()) + ' · against ' +
+    esc(provName) + ' and against the country</div><div class="hero">' +
+    '<div class="h"><div class="n">' + fmt(mine.wc.den) + '</div><div class="u">slaughtered here</div></div>' +
+    '<div class="h"><div class="n">' + fmt(prov.wc.den) + '</div><div class="u">slaughtered in ' + esc(provName) + '</div></div>' +
+    '<div class="h"><div class="n">' + fmt(natl.wc.den) + '</div><div class="u">slaughtered nationally</div></div>' +
+    '</div>';
+  if(!mine.wc.den)
+    h += '<div class="warnbox" style="margin:10px 0 0">This abattoir reported no slaughter figure ' +
+         'in this period, so there is no denominator and no rate can be compared. Widen the months.</div>';
+  h += '<div class="infobox" style="margin:10px 0 0">The province and national figures are an ' +
+       '<b>average across abattoirs</b>, not a national total divided by national throughput. A ' +
+       'condemnation ratio is not a price and does not weight: if it did, a handful of very large ' +
+       'plants would set the standard every small abattoir is judged against. Each plant is worked ' +
+       'out on its own throughput first, then the plants are averaged — one abattoir, one vote.' +
+       '</div></div>';
+  if(!mine.wc.den) return h;
+
+  function cmp(title, m, p, n, unit, dp){
+    var keys = {}, k, rows = [];
+    for(k in m.num) if(m.num.hasOwnProperty(k)) keys[k] = 1;
+    for(k in keys) if(keys.hasOwnProperty(k)){
+      /* this plant's own rate, against the AVERAGE ABATTOIR in its province and
+         in the country -- one abattoir one vote, never weighted by size */
+      var mr = ownRate(m, me, k);
+      var pr = (p.num[k] === undefined) ? null : p.num[k];
+      var nr = (n.num[k] === undefined) ? null : n.num[k];
+      var raw = m.perAba[me] ? (m.perAba[me].num[k] || 0) : 0;
+      rows.push({ k:k, v:raw, mr:mr, pr:pr, nr:nr,
+                  ratio:(nr>0 && mr!==null) ? mr/nr : null });
+    }
+    rows.sort(function(a,b){ return b.mr - a.mr; });
+    if(!rows.length) return '';
+    var s = '<div class="card"><h3>' + esc(title) + '</h3><div class="scroll"><table><thead><tr>' +
+      '<th>Disease or condition</th><th class="n">Here</th><th class="n">This plant</th>' +
+      '<th class="n">' + esc(provName) + ' average</th><th class="n">National average</th>' +
+      '<th class="n">vs national</th></tr></thead><tbody>';
+    for(var i=0;i<rows.length;i++){
+      var r2 = rows[i], flag = '';
+      if(r2.ratio !== null && r2.ratio >= 2) flag = ' style="color:#a3311f;font-weight:700"';
+      else if(r2.ratio !== null && r2.ratio <= 0.5) flag = ' style="color:#1d6b4f"';
+      s += '<tr><td>' + esc(r2.k) + legalBadge(r2.k) + '</td>' +
+           '<td class="n">' + fmt(r2.v) + '</td>' +
+           '<td class="n"' + flag + '>' + fmt(r2.mr, dp) + '</td>' +
+           '<td class="n">' + (r2.pr===null?'–':fmt(r2.pr, dp)) + '</td>' +
+           '<td class="n">' + (r2.nr===null?'–':fmt(r2.nr, dp)) + '</td>' +
+           '<td class="n"' + flag + '>' +
+           (r2.ratio===null ? '–' : (r2.ratio>=1 ? fmt(r2.ratio,1)+'×' : fmt(r2.ratio,2)+'×')) +
+           '</td></tr>';
+    }
+    return s + '</tbody></table></div><div class="tiny" style="margin-top:8px">Rates are ' +
+      esc(unit) + '. The province and national columns are the <b>average of the abattoirs</b> — ' +
+      'each plant worked out on its own throughput, then averaged, one abattoir one vote (' +
+      fmt(p.nAba) + ' in ' + esc(provName) + ', ' + fmt(n.nAba) + ' nationally). A plant that ' +
+      'slaughtered but reported none of a condition counts as a <b>nil</b> in that average, not as ' +
+      'missing — leaving it out would average only the plants that had it and inflate the benchmark. ' +
+      '<span style="color:#a3311f;font-weight:700">Red</span> marks twice the national average or ' +
+      'worse; <span style="color:#1d6b4f">green</span> marks half or better. A dash means nobody ' +
+      'reported it at all.</div></div>';
+  }
+  /* Species first: a plant killing mostly pigs cannot be judged against a province
+     that mostly kills sheep. Each species is compared against the same species
+     elsewhere, never against the provincial mixture. */
+  function bySpecies(){
+    var rows = [], i, k, spSeen = {};
+    for(i=0;i<D.sl.length;i++){
+      var r3 = D.sl[i];
+      if(r3[0] < ui.p0 || r3[0] > ui.p1) continue;
+      if(r3[1] !== me) continue;
+      spSeen[r3[2]] = 1;
+    }
+    for(k in spSeen) if(spSeen.hasOwnProperty(k)){
+      var si = parseInt(k,10);
+      /* Same rule as everywhere else on this screen: work each abattoir out on its
+         own throughput for THIS species, then average the abattoirs. Never a
+         provincial total over a provincial throughput. */
+      function forSp(filterFn){
+        var per = {}, j, r4, a2;
+        for(j=0;j<D.sl.length;j++){ r4 = D.sl[j];
+          if(r4[0] < ui.p0 || r4[0] > ui.p1 || r4[2] !== si || !filterFn(r4)) continue;
+          if(!per.hasOwnProperty(r4[1])) per[r4[1]] = { den:0, wc:0, of:0, keys:{} };
+          per[r4[1]].den += r4[3]; per[r4[1]].keys[r4[0]] = 1; }
+        for(j=0;j<D.wc.length;j++){ r4 = D.wc[j];
+          if(r4[0] < ui.p0 || r4[0] > ui.p1 || r4[2] !== si || !filterFn(r4)) continue;
+          if(per.hasOwnProperty(r4[1]) && per[r4[1]].keys.hasOwnProperty(r4[0])) per[r4[1]].wc += r4[4]; }
+        for(j=0;j<D.of.length;j++){ r4 = D.of[j];
+          if(r4[0] < ui.p0 || r4[0] > ui.p1 || r4[2] !== si || !filterFn(r4)) continue;
+          if(per.hasOwnProperty(r4[1]) && per[r4[1]].keys.hasOwnProperty(r4[0])) per[r4[1]].of += r4[5]; }
+        var n2 = 0, sw = 0, so = 0, td = 0;
+        for(a2 in per) if(per.hasOwnProperty(a2) && per[a2].den > 0){
+          n2++; td += per[a2].den;
+          sw += per[a2].wc / per[a2].den * 100;
+          so += per[a2].of / per[a2].den * 100;
+        }
+        return { den:td, nAba:n2, wc:n2>0?sw/n2:null, of:n2>0?so/n2:null, per:per };
+      }
+      /* "m" is this plant alone, so its average-of-one IS its own rate. */
+      rows.push({ sp:D.spec[si],
+        m:forSp(function(r5){ return r5[1] === me; }),
+        p:forSp(function(r5){ return abaProv(r5[1]) === provIx2; }),
+        n:forSp(function(){ return true; }) });
+    }
+    rows.sort(function(a,b){ return b.m.den - a.m.den; });
+    if(!rows.length) return '';
+    var s = '<div class="card"><h3>By species — this plant against the same species elsewhere</h3>' +
+      '<div class="scroll"><table><thead><tr><th>Species</th><th class="n">Slaughtered here</th>' +
+      '<th class="n">Carcasses here</th><th class="n">' + esc(provName) + '</th><th class="n">National</th>' +
+      '<th class="n">Organs here</th><th class="n">' + esc(provName) + '</th><th class="n">National</th>' +
+      '</tr></thead><tbody>';
+    function cell(mine2, natl2, dp){
+      if(mine2 === null) return '<td class="n">–</td>';
+      var st = '';
+      if(natl2 > 0){ var ratio = mine2/natl2;
+        if(ratio >= 2) st = ' style="color:#a3311f;font-weight:700"';
+        else if(ratio <= 0.5) st = ' style="color:#1d6b4f"'; }
+      return '<td class="n"' + st + '>' + fmt(mine2, dp) + '</td>';
+    }
+    for(var q=0;q<rows.length;q++){
+      var w = rows[q];
+      s += '<tr><td>' + esc(w.sp) + '</td><td class="n">' + fmt(w.m.den) + '</td>' +
+           cell(w.m.wc, w.n.wc, 3) +
+           '<td class="n">' + (w.p.wc===null?'–':fmt(w.p.wc,3)) + '</td>' +
+           '<td class="n">' + (w.n.wc===null?'–':fmt(w.n.wc,3)) + '</td>' +
+           cell(w.m.of, w.n.of, 2) +
+           '<td class="n">' + (w.p.of===null?'–':fmt(w.p.of,2)) + '</td>' +
+           '<td class="n">' + (w.n.of===null?'–':fmt(w.n.of,2)) + '</td></tr>';
+    }
+    return s + '</tbody></table></div><div class="tiny" style="margin-top:8px">Carcass columns are ' +
+      'carcasses condemned per 100 animals of that species; organ columns are organs condemned per 100 ' +
+      'animals of that species. <b>Each species is compared only against the same species</b> — a pig ' +
+      'plant judged against a sheep province would say nothing. The province and national figures are ' +
+      'the <b>average of the abattoirs that kill that species</b>, one abattoir one vote, not a total ' +
+      'divided by a total. Colour marks twice the national average or worse, and half or better.' +
+      '</div></div>';
+  }
+  h += bySpecies();
+  h += cmp('Whole carcasses condemned — by disease', mine.wc, prov.wc, natl.wc,
+           'carcasses condemned per 100 animals slaughtered', 3);
+  h += cmp('Offal condemned — by condition', mine.of, prov.of, natl.of,
+           'organs condemned per 100 animals slaughtered', 2);
+  return h;
+}
+
+var QUESTIONS = [
+  { q:'Every abattoir owes a Schedule 8 to its PEO. How many actually file?',
+    w:'The whole national register, and how much of it reaches a national system.',
+    go:function(){ ui.tab='cover'; ui.prov=-1; ui.aba=-1; ui.spec=-1; } },
+  { q:'Which organ is condemned most across the country?',
+    w:'Every abattoir, every species, the full period in the file.',
+    go:function(){ ui.tab='offal'; allScope(); } },
+  { q:'How bad are pig lungs, and is it getting worse?',
+    w:'The worst figure in the dataset. Watch the trend line.',
+    go:function(){ ui.tab='offal'; allScope(); ui.spec=ixOf(D.spec,'Pigs'); } },
+  { q:'What is condemned in cattle, and at what rate?',
+    w:'Organs per 100 head, against cattle throughput only.',
+    go:function(){ ui.tab='offal'; allScope(); ui.spec=ixOf(D.spec,'Cattle'); } },
+  { q:'Which abattoirs have the worst offal rate?',
+    w:'Ranked per 100 animals, so a big plant does not simply top the list.',
+    go:function(){ ui.tab='aba'; allScope(); } },
+  { q:'What whole carcasses are being condemned, and why?',
+    w:'Head only, as a percentage of animals slaughtered.',
+    go:function(){ ui.tab='carc'; allScope(); } },
+  { q:'How many animals die before they reach the slaughter floor?',
+    w:'Lairage losses, kept out of the disease figures where they belong.',
+    go:function(){ ui.tab='lair'; allScope(); } },
+  { q:'How much meat is trimmed off rather than condemned whole?',
+    w:'The only part of the return measured in kilograms.',
+    go:function(){ ui.tab='trim'; allScope(); } },
+  { q:'What happened in one month?',
+    w:'Sets both month boxes to the latest month in the file.',
+    go:function(){ ui.tab='dash'; allScope(); ui.p0 = ui.p1 = D.meta.periods.length-1; } },
+  { q:'How much is actually slaughtered, and by whom?',
+    w:'The denominator behind every rate in this program.',
+    go:function(){ ui.tab='thru'; allScope(); } }
+];
+function allScope(){ ui.prov=-1; ui.aba=-1; ui.spec=-1; ui.dis=-1; ui.p0=0; ui.p1=D.meta.periods.length-1; }
+function ixOf(arr, name){ for(var i=0;i<arr.length;i++) if(arr[i]===name) return i; return -1; }
+
+function vAsk(){
+  var h = '<div class="card"><h2>Ask it something</h2><div class="tiny" style="margin-top:6px">' +
+    'These set the filters for you. After that, change anything in the bar above — every tab ' +
+    'answers for whatever is selected, and every answer can be saved.</div></div>';
+  for(var i=0;i<QUESTIONS.length;i++)
+    h += '<button class="q" data-ask="'+i+'">' + esc(QUESTIONS[i].q) +
+         '<small>' + esc(QUESTIONS[i].w) + '</small></button>';
+  h += '<div class="card" style="margin-top:14px"><h3>What is in here</h3><div class="tiny">' +
+    'The <b>national register — all ' + fmt(D.meta.registered) + ' abattoirs</b> across ' +
+    D.prov.length + ' provinces. Of those, <b>' + fmt(D.meta.reporting) + '</b> have submitted an ' +
+    'approved Schedule 8 since ' + D.meta.fromYear + ', together making ' + fmt(D.meta.returns) +
+    ' returns, month by month from ' + perPretty(0) + ' to ' + perPretty(D.meta.periods.length-1) +
+    '. The other ' + fmt(D.meta.registered - D.meta.reporting) + ' have submitted none, and are ' +
+    'shown as such rather than as zeros.<br><br><b>' + esc(D.meta.note) + '</b><br><br>' +
+    'Every value in the source parsed cleanly as a number — ' + D.meta.unparsed +
+    ' failures across the whole set.<br><br>Four measures are held apart and never added together: ' +
+    'whole carcasses in <b>head</b>, trimmings in <b>kilograms</b>, offal in <b>organs</b>, and ' +
+    'lairage in <b>animals lost</b>. A rate is shown only where the denominator covers the same ' +
+    'abattoirs, species and months as the numerator; where it does not, the figure is withheld and ' +
+    'the reason is printed.</div></div>';
+  return h;
+}
+
+/* ---------- render ---------- */
+function needsExport(t){ return t!=='ask' && t!=='saved' && t!=='notify'; }
+function render(){
+  var quiet = silentPanel();
+  var body = ui.tab==='ask'   ? vAsk()
+           : ui.tab==='saved' ? vSaved()
+           : ui.tab==='notify'? vNotify()
+           : ui.tab==='cover' ? vCover()
+           : ui.tab==='aba'   ? vAba()
+           : quiet             ? quiet
+           : ui.tab==='cmp'   ? vCompare()
+           : ui.tab==='dis'   ? vDis()
+           : ui.tab==='dash'  ? vDash()
+           : ui.tab==='offal' ? vOffal()
+           : ui.tab==='carc'  ? vCarc()
+           : ui.tab==='trim'  ? vTrim()
+           : ui.tab==='lair'  ? vLair()
+           : ui.tab==='thru'  ? vThru()
+           : vDash();
+  var printhead = '<div class="printhead"><b>' + esc(tabLabel(ui.tab)) + '</b><br>' +
+    esc(scopeLine()) + '<br>Generated ' + esc(fileStamp()) +
+    ' from ARMS · approved Schedule 8 returns only</div>';
+  app.innerHTML = chrome() + '<div class="wrap">' + printhead +
+    (needsExport(ui.tab) ? expBar() : '') + body + '</div>' +
+    '<div class="foot">Built ' + esc(D.meta.built) + ' from the restored NAHDIS databases. ' +
+    'The register is every abattoir in the country (' + fmt(D.meta.registered) + '); the figures ' +
+    'come from the ' + fmt(D.meta.reporting) + ' that have submitted an approved return since ' +
+    D.meta.fromYear + '. Approved returns only.</div>';
+}
+
+function onChange(e){
+  var t = e.target;
+  if(t.id==='p0'){ ui.p0 = parseInt(t.value,10); if(ui.p1 < ui.p0) ui.p1 = ui.p0; render(); return; }
+  if(t.id==='p1'){ ui.p1 = parseInt(t.value,10); if(ui.p0 > ui.p1) ui.p0 = ui.p1; render(); return; }
+  if(t.id==='prov'){
+    ui.prov = parseInt(t.value,10);
+    if(ui.aba >= 0 && ui.prov >= 0 && abaProv(ui.aba) !== ui.prov) ui.aba = -1;
+    render(); return;
+  }
+  if(t.id==='aba'){ ui.aba = parseInt(t.value,10); render(); return; }
+  if(t.id==='spec'){ ui.spec = parseInt(t.value,10); render(); return; }
+  if(t.id==='dis'){ ui.dis = parseInt(t.value,10); render(); return; }
+}
+
+var ACTIONS = ['data-tab','data-ask','data-reset','data-goaba','data-exp','data-open','data-del','data-delc'];
+function actionOf(node){
+  var i;
+  for(i=0;i<ACTIONS.length;i++) if(node.getAttribute && node.getAttribute(ACTIONS[i]) !== null)
+    return [ACTIONS[i], node.getAttribute(ACTIONS[i])];
+  return null;
+}
+function onClick(e){
+  var t = e.target, act = null;
+  while(t && t !== app){ act = actionOf(t); if(act) break; t = t.parentNode; }
+  if(!act) return;
+  var kind = act[0], val = act[1];
+  if(kind==='data-tab'){ ui.tab = val; render(); return; }
+  if(kind==='data-ask'){ QUESTIONS[parseInt(val,10)].go(); render(); return; }
+  if(kind==='data-reset'){ allScope(); render(); return; }
+  if(kind==='data-goaba'){ ui.aba = parseInt(val,10); ui.prov = -1; ui.tab = 'offal'; render(); return; }
+  if(kind==='data-open'){ openReport(parseInt(val,10)); return; }
+  if(kind==='data-delc'){
+    var cs = loadContacts(), ci = parseInt(val,10);
+    if(cs[ci] && window.confirm('Remove ' + cs[ci].name + ' from the notification list?')){
+      cs.splice(ci,1); putContacts(cs); render();
+    }
+    return;
+  }
+  if(kind==='data-del'){
+    var all = loadReports(), i = parseInt(val,10);
+    if(!all[i]) return;
+    if(window.confirm('Remove the saved report “' + all[i].name + '”?')){
+      all.splice(i,1); putReports(all); render();
+    }
+    return;
+  }
+  if(kind==='data-exp'){
+    if(val==='pdf' || val==='print'){ window.print(); return; }
+    if(val==='save'){ saveCurrent(); return; }
+    if(val==='addcontact'){ addContact(); return; }
+    if(val==='alert'){ composeAlert(); return; }
+    if(val==='csv'){
+      var csv = currentCsv();
+      var name = 'ARMS ' + tabLabel(ui.tab) + ' ' + fileStamp() + '.csv';
+      if(!tryDownload(csv, name))
+        showText(csv, 'This viewer will not let a page save a file. Copy the text below and paste ' +
+                      'it into a spreadsheet, or open the program from the file on your computer, ' +
+                      'where the download works.');
+      return;
+    }
+    if(val==='txt'){ showText(currentCsv(), null); return; }
+    if(val==='hide'){ var b = el('expout'); if(b) b.innerHTML = ''; return; }
+    if(val==='copy'){
+      var box = el('expta');
+      if(!box) return;
+      box.removeAttribute('readonly');
+      box.focus(); box.setSelectionRange(0, box.value.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch(err){ ok = false; }
+      box.setAttribute('readonly','readonly');
+      e.target.textContent = ok ? 'Copied — now paste it into Excel'
+                                : 'Could not copy — select the text and copy it yourself';
+      return;
+    }
+  }
+}
+
+function init(){
+  app = document.getElementById('app');
+  if(!D){ app.innerHTML = '<div class="empty">No data was built into this file.</div>'; return; }
+  ui = { tab:'dash', p0:0, p1:D.meta.periods.length-1, prov:-1, aba:-1, spec:-1, dis:-1 };
+  app.addEventListener('change', onChange, false);
+  app.addEventListener('click', onClick, false);
+  render();
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init, false);
+else init();
+
+})();
+</script>
+</body>
+</html>

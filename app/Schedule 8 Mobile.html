@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123a2c">
+<title>Schedule 8 &mdash; Monthly Return</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+     background:#eef1ee;color:#16211c;padding-bottom:88px}
+h1,h2,h3{margin:0;font-weight:700}
+a{color:#1d6b4f}
+.top{position:sticky;top:0;z-index:20;background:#123a2c;color:#fff;
+     padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;display:flex;align-items:center;gap:10px}
+.top h1{font-size:17px;flex:1;line-height:1.2}
+.top .sub{display:block;font-size:11px;font-weight:400;opacity:.75;letter-spacing:.03em}
+.back{background:rgba(255,255,255,.15);border:0;color:#fff;font-size:15px;
+      padding:7px 12px;border-radius:8px;cursor:pointer;flex:none}
+.wrap{padding:12px}
+.card{background:#fff;border-radius:12px;padding:14px;margin:0 0 12px;
+      box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card h2{font-size:15px;margin-bottom:2px}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b63;margin-bottom:8px}
+.muted{color:#5b6b63;font-size:13px}
+.tiny{font-size:12px;color:#5b6b63}
+label{display:block;font-size:13px;color:#3d4c45;margin:10px 0 4px;font-weight:600}
+input,select,textarea{width:100%;font:inherit;padding:11px 12px;border:1px solid #c8d2cc;
+      border-radius:9px;background:#fff;color:inherit}
+input[type=number]{font-variant-numeric:tabular-nums}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #2e8b63;outline-offset:-1px;border-color:#2e8b63}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;padding:14px;border:0;border-radius:10px;background:#1d6b4f;
+     color:#fff;font-weight:700;font-size:16px;text-align:center}
+.btn.sec{background:#fff;color:#1d6b4f;border:1.5px solid #1d6b4f}
+.btn.warn{background:#fff;color:#a3311f;border:1.5px solid #d9b3ac}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.row .flexnone{flex:none}
+.chip{display:inline-block;padding:5px 11px;border-radius:999px;font-size:13px;
+      border:1.5px solid #c8d2cc;background:#fff;margin:0 6px 6px 0;color:#3d4c45}
+.chip.on{background:#1d6b4f;border-color:#1d6b4f;color:#fff;font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;
+      letter-spacing:.04em;text-transform:uppercase}
+.pill.draft{background:#e8eae8;color:#5b6b63}
+.pill.ready{background:#d9efe3;color:#1d6b4f}
+.pill.sent{background:#123a2c;color:#fff}
+.pill.notif{background:#a3311f;color:#fff}
+.item{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eaefec;
+      padding:13px 12px;font-size:15px}
+.item:last-child{border-bottom:0}
+.item .sub{display:block;font-size:12px;color:#5b6b63;margin-top:2px}
+.list{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px}
+.lrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eaefec}
+.lrow:last-child{border-bottom:0}
+.lrow .nm{flex:1;font-size:14.5px;min-width:0}
+.lrow .nm small{display:block;color:#5b6b63;font-size:12px}
+.lrow input{width:88px;flex:none;text-align:right;padding:9px 10px}
+.lrow .x{flex:none;background:none;border:0;color:#a3311f;font-size:19px;padding:4px 6px;line-height:1}
+.warnbox{background:#fdf0ed;border:1px solid #e8c4bb;border-radius:10px;padding:11px 12px;
+     margin:0 0 12px;font-size:13.5px;color:#7d2517}
+.okbox{background:#e9f5ee;border:1px solid #bcdcc9;border-radius:10px;padding:11px 12px;
+     margin:0 0 12px;font-size:13.5px;color:#17583e}
+.infobox{background:#eef2f6;border:1px solid #cbd6e0;border-radius:10px;padding:11px 12px;
+     margin:0 0 12px;font-size:13.5px;color:#33475c}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid #dde4e0;
+     padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);display:flex;gap:8px}
+.bar>*{flex:1}
+.search{position:sticky;top:0;z-index:10;background:#eef1ee;padding:10px 0 8px}
+.sechead{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5b6b63;
+     padding:12px 12px 5px;background:#f4f7f5;font-weight:700}
+.tot{display:flex;justify-content:space-between;padding:11px 12px;background:#f4f7f5;
+     font-size:13.5px;font-weight:700;color:#3d4c45}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid label{margin:0 0 3px}
+.empty{text-align:center;color:#5b6b63;padding:26px 14px;font-size:14px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.out{width:100%;min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* NAHDIS / ARMS -- Schedule 8 monthly return, inspector's phone app.
+   Strict ES5, single file, works offline from file:// once opened.
+   Form definition taken verbatim from the Schedule8 database (Forms/Groups/Items/Parts),
+   form version 2. Units: condemnation statistics are in HEAD, "Partially Condemned
+   Diseases" are in KILOGRAMS, offal is a count of ORGANS. Those three are never added
+   together -- in this app or anywhere downstream. */
+(function(){
+'use strict';
+
+/* ---------- form definition (from Schedule8 db, FRM_ID 1, version 2) ---------- */
+
+var SPECIES = ["Cattle","Calves","Sheep","Pigs","Goats","Horses","Ostrich","Game",
+               "Crocodiles","Chicken","Ducks","Rabbits","Donkey"];
+
+var ORGANS = ["Heads","Kidneys","Lungs","Spleen","Tongues","Tripes","Hearts",
+              "Livers","Skirts","Tails","Intestines"];
+
+/* CONDEMNATION STATISTICS -- whole carcasses, counted in HEAD.
+   g  = what the inspector reads on the phone
+   db = the sub-group string as it is stored in the NAHDIS Groups table. The two
+        differ (the register has no ampersand); keeping both here stops the export
+        string drifting away from the database it has to join to. */
+var WC = [
+ { g:"Controlled Animal Diseases & Zoonoses", db:"Controlled Animal Diseases Zoonoses",
+   notify:true, items:[
+   "African horse sickness (AHS)","African Swine Fever (ASF)","Anthrax","Tuberculosis",
+   "Aujeszky's disease","Erysipelas","Bovine Contagious Pleuropneumonia (CBPP)",
+   "Bovine spongiform encephalopathy (BSE)","Brucellosis (in all animal species)",
+   "Classical Swine Fever (CSF)","Contagious Equine Metritis (CEM)",
+   "Corridor or Buffalo disease (Theileriosis)","Dourine","East Coast Fever",
+   "Equine Infectious Anaemia (EIA)","Equine Influenza (EI)","Equine Viral Arteritis (EVA)",
+   "Foot-and-mouth Disease (FMD)","Glanders","Johne's disease (in sheep, cattle and goats)",
+   "Koi Herpes Virus","Nagana (Trypanosomiasis)","Newcastle disease",
+   "Notifiable Avian Influenza (NAI)","Porcine Reproductive and Respiratory Syndrome (PRRS)",
+   "Psittacosis","Rabies","Rinderpest","Salmonella Enteritidis",
+   "Salmonella Pullorum (Bacillary white diarrhoea)","Scrapie","Sheep scab",
+   "Skin conditions in sheep","Swine vesicular disease","Bluetongue",
+   "Bovine malignant catarrhal fever (Snotsiekte)","Lumpy skin disease","Rift valley fever",
+   "Strangles"] },
+ { g:"Degenerative Conditions", db:"Degenerative Conditions",
+   items:["Cachexia","Necrosis","Oedema"] },
+ { g:"Septic and Inflammatory Conditions", db:"Septic and Inflammatory Conditions", items:[
+   "Gangrene","Pyamia/Septicaemia/Toxaemia","Uraemia/Nephritis","Abscessations",
+   "Lymphadenitis","Arthritis","Tail bite necrosis","Peritonitis/Pleuritis",
+   "Enteritis/Gastritis","Mastitis"] },
+ { g:"Parasitic or Infectious Condition", db:"Parasitic or Infectious Condition", items:[
+   "Cysticercosis","Parafilariasis","Anaplasmosis","Sarcosporidiosis",
+   "Caseous Lymphadenitis","Rectal Prolapse"] },
+ { g:"General Aesthetic Conditions", db:"General Aesthetic Conditions", items:[
+   "Abnormal Pigmentation","Anaemia","Bloodsplashing","Bruising / Injuries",
+   "Contamination / Soiling","Fever","Heat stroke","Icterus","Insufficient bleeding",
+   "Immaturity","Machine damage","Metabolic diseases","Moribund","Neoplasma","Skin lesions",
+   "Toe Necrosis","Putrefaction / Decomposition","Pathological Contamination",
+   "Faeces Contamination","Pneumonia","Overscalding (Pig)","Wet Carcase Syndrome"] },
+ { g:"Other", db:"Other", items:["Other"] }
+];
+
+/* Partially Condemned Diseases -- KILOGRAMS, not head */
+var PC = ["Tuberculosis","Erysipelas","Necrosis","Oedema","Gangrene","Abscessations",
+ "Arthritis","Tail bite necrosis","Peritonitis/Pleuritis","Enteritis/Gastritis","Mastitis",
+ "Cysticercosis","Parafilariasis","Sarcosporidiosis","Caseous Lymphadenitis","Rectal Prolapse",
+ "Abnormal Pigmentation","Bloodsplashing","Bruising / Injuries","Contamination / Soiling",
+ "Machine damage","Neoplasma","Skin lesions","Toe Necrosis","Pathological Contamination",
+ "Faeces Contamination","Pneumonia","Overscalding (Pig)","Wet Carcase Syndrome"];
+
+/* OFFAL CONDEMNATIONS -- each condition broken down by organ */
+var OFFAL = ["Abnormal Pigmentation","Abscessations","Actinomycosis","Anaemia","Anaplasmosis",
+ "Arthritis","Bloodsplashing","Brucellosis","Bruising / Injuries","Cachexia",
+ "Caseous Lymphadenitis","Contamination / Soiling","Cysticercosis","Degeneration",
+ "Echinococcosis","Emphysema","Enteritis/Gastritis","Erysipelas","Faeces Contamination",
+ "Fascioliasis","Fever","Gangrene","Heat stroke","Icterus/Jaundice","Immaturity",
+ "Insufficient bleeding","Leptospirosis","Lumpy Skin Disease","Lymphadenitis","Machine damage",
+ "Mastitis","Metabolic diseases","Mils Spots (Ascarissuum)","Moribund","Necrosis",
+ "Neoplasma/Cancer","Nephritis","Nodular Worms","Oedema","Overscalding (Pig)","Parafilariasis",
+ "Pathological Contamination","Pericarditis","Peritonitis/Pleuritis","Pigmentation","Pneumonia",
+ "Prolapse","Putrefaction / Decomposition","Rectal Prolapse","Sarcosporidiosis","Scrotal Sepsis",
+ "Septicaemia/Toxaemia/ Pyamia","Skin lesions","Stilesia Hepatica","Swine Fever",
+ "Tail bite necrosis","Telangiectasis","Toe Necrosis","Tuberculosis","Uraemia",
+ "Wet Carcas Syndrome","Other"];
+
+/* LAIRAGE REPORT -- "NUMBER OF ANIMALS -" */
+var LAIR = ["Dead on arrival","Down on arrival","Destroyed","Dead in pen","Down in pen"];
+
+/* FSA abattoirs that submitted a Schedule 8 in the last 12 months (NAHDIS registry).
+   sp = species this abattoir has actually reported slaughtering. */
+var ABATTOIRS = [
+ [5,"Aliwal Abattoir","Cattle,Pigs,Sheep"],[664,"Allen's Abattoir","Cattle,Sheep"],
+ [528,"Altona","Cattle,Pigs,Sheep"],[529,"Ambleside Meats","Pigs"],
+ [260,"Baberton Correctional Services","Cattle,Goats,Pigs,Sheep"],
+ [450,"Baviaanspoort Abattoir","Cattle,Pigs"],[137,"BBB Abattoir Heilbron","Cattle,Sheep"],
+ [263,"Belfast","Cattle,Pigs,Sheep"],[532,"Berg","Cattle,Sheep"],
+ [264,"Bergendal","Cattle,Pigs,Sheep"],[707,"Blinkwater",""],
+ [109,"Bloemfontein Abattoir","Cattle"],[424,"Bonnievale Abattoir","Cattle,Pigs,Sheep"],
+ [112,"Boshof Vleisverspreiders","Cattle,Sheep"],[428,"Callies Abattoir","Cattle,Pigs,Sheep"],
+ [366,"Calvinia Lande","Calves,Cattle,Goats,Sheep"],[367,"Carnarvon Abattoir","Cattle,Sheep"],
+ [455,"Cavalier Abattoir","Cattle,Sheep"],[456,"Chalmar Beef","Cattle,Sheep"],
+ [724,"CKI Graaff-Reinet","Ostrich"],[217,"CKI Mossel Bay (Mosstrich)","Game,Ostrich"],
+ [459,"Comet Varsvleis","Cattle,Goats,Pigs,Sheep"],[537,"Cowboy","Calves,Cattle"],
+ [539,"Dalton","Pigs"],[541,"Darnall","Pigs"],[432,"Deli-Co Abattoir","Sheep"],
+ [725,"Docrate Abattoir","Cattle,Sheep"],[464,"Dreamland Piggery","Pigs"],
+ [678,"Driefontein Abattoir","Cattle,Sheep"],[269,"E & T","Cattle,Sheep"],
+ [120,"Eden Abattoir","Cattle,Pigs,Sheep"],[467,"EPP (Molare)","Pigs"],
+ [544,"Eshowe Abattoir","Cattle"],[697,"Farmers Craft (Pty) Ltd","Cattle,Goats,Sheep"],
+ [728,"Fouries Drift Abattoir","Cattle,Sheep"],[548,"Freys Cato Ridge","Pigs"],
+ [625,"Gaza Beef","Cattle"],[550,"Glencoe Pig","Pigs"],
+ [275,"Goedehoop Leslie","Cattle,Game,Pigs,Sheep"],
+ [131,"Goedemoed Abattoir","Cattle,Pigs,Sheep"],[276,"Goedertrouw","Cattle,Pigs,Sheep"],
+ [717,"Gondwana / Chestnut Hills","Ostrich"],[703,"GP&J","Cattle,Sheep"],
+ [709,"Halaal Fresh Meat (Pty) Ltd","Cattle,Sheep"],
+ [446,"Helderstroom Correctional Services","Cattle,Pigs,Sheep"],
+ [447,"Hessequa Abattoir","Calves,Cattle,Sheep"],
+ [140,"Huntersvlei Farm Fresh","Cattle,Pigs,Sheep"],[562,"Jacques","Cattle,Sheep"],
+ [146,"Just Pork","Pigs"],[383,"Kakamas","Cattle,Sheep"],
+ [483,"Kameeldrift Fresh Meat","Cattle"],[278,"Karan Beef","Cattle"],
+ [57,"Karnoor Abattoir","Cattle,Sheep"],[206,"Karoo Lam","Sheep"],
+ [486,"Klipeiland Abattoir","Cattle,Pigs,Sheep"],[392,"KLK (Upington Abattoir)","Cattle,Sheep"],
+ [692,"Koepel Abattoir","Calves,Cattle,Sheep"],[151,"Koppies Veebemarkers","Cattle"],
+ [731,"Koster Abattoir","Cattle,Pigs,Sheep"],[394,"Kuruman Abattoir","Cattle,Sheep"],
+ [710,"Kwa Eden Trading","Cattle,Pigs"],[374,"KYTO Operations (Groblershoop)","Sheep"],
+ [570,"Ladysmith","Cattle,Sheep"],[700,"Le Croc","Crocodiles"],
+ [488,"Leeuwkop Abattoir","Cattle,Pigs"],
+ [711,"Luken (Business Harmony Pty Ltd)","Cattle,Pigs,Sheep"],
+ [166,"Midway Abattoir","Cattle,Sheep"],[168,"Milos Abattoir","Pigs"],
+ [721,"Modjadit / Vleiskombuis","Cattle"],
+ [215,"Moorreesburg Private Abattoir","Calves,Cattle,Sheep"],[493,"Morgan Abattoir","Cattle"],
+ [718,"Morgenzon Abattoir","Sheep"],[170,"N3","Cattle,Sheep"],
+ [730,"Namaqua Masters International","Calves,Cattle,Sheep"],
+ [673,"Neosotho Trading (Boston)","Calves,Cattle,Pigs,Sheep"],[587,"NN Abattoir","Cattle,Sheep"],
+ [708,"Numolox","Cattle,Sheep"],[224,"Osdam Abattoir","Cattle,Sheep"],
+ [716,"Ostriland","Ostrich"],[644,"Phalaborwa","Cattle,Pigs,Sheep"],
+ [646,"Potgietersrus","Cattle,Goats,Pigs,Sheep"],
+ [410,"Prieska Abattoir","Cattle,Game,Pigs,Sheep"],[726,"Prime Pork","Pigs"],
+ [498,"R & R (Pty) Ltd","Pigs"],[670,"R&R Abattoir","Pigs"],
+ [292,"Ramsburg Beef","Cattle,Sheep"],[501,"Renbro","Cattle,Goats,Pigs,Sheep"],
+ [504,"Rietspruit","Cattle,Sheep"],[178,"Rodenbeck","Sheep"],
+ [231,"Roelcor Abattoir Malmesbury","Cattle,Pigs"],
+ [232,"Roelcor George Abattoir","Calves,Cattle,Pigs,Sheep"],[414,"Rooidag Abattoir","Sheep"],
+ [230,"SAFAM Robertson Abattoir","Calves,Cattle,Pigs,Sheep"],
+ [602,"Sevontein Correctional Services","Cattle,Pigs"],
+ [720,"Soutpansberg Meat Boys","Cattle"],[294,"Standerton","Cattle,Pigs,Sheep"],
+ [344,"Stella Vleis","Cattle,Sheep"],[701,"Steynsburg Pork","Pigs"],
+ [713,"Stone Creek","Pigs,Sheep"],[714,"Stoneford","Pigs"],
+ [510,"Strydfontein","Cattle,Sheep"],[184,"Superb Meat Abattoir","Cattle,Sheep"],
+ [702,"Sweet Home Meats","Sheep"],[186,"Swiss Valley Farms","Pigs"],
+ [246,"Thaba Kwena Abattoir","Crocodiles"],
+ [247,"Thabazimbi Abattoir","Cattle,Goats,Pigs,Sheep"],[611,"Top Grade","Cattle"],
+ [612,"Triple A Beef / Karan Beef","Cattle"],
+ [241,"Van Rensburg Abattoir","Cattle,Pigs,Sheep"],[515,"Vereeniging","Cattle,Pigs,Sheep"],
+ [300,"Volksrust","Cattle"],[684,"Voorspoed Varkboerdery CC","Pigs"],
+ [669,"Waltkon Abattoir","Cattle,Pigs"],[617,"Waterval","Cattle,Pigs"],
+ [421,"Williston","Sheep"],[243,"Winelands Pork Abattoir","Pigs"],
+ [201,"Wolwehoek","Cattle,Pigs,Sheep"],[686,"Zandam","Pigs"]
+];
+
+/* ---------- storage ---------- */
+
+var LS = 'nahdis-schedule8-mobile-v1';
+var db, ui;
+
+function load(){
+  var d = null;
+  try { d = JSON.parse(window.localStorage.getItem(LS)); } catch(e){ d = null; }
+  if(!d || typeof d !== 'object') d = {};
+  if(typeof d.inspector !== 'string') d.inspector = '';
+  if(!(d.returns instanceof Array)) d.returns = [];
+  return d;
+}
+function save(){
+  try { window.localStorage.setItem(LS, JSON.stringify(db)); }
+  catch(e){ alert('Could not save on this phone: ' + e.message +
+                  '\n\nExport this return now so the work is not lost.'); }
+}
+
+/* ---------- small helpers ---------- */
+
+function esc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/* A box containing only spaces is an empty box. Required-text checks must see it
+   that way, or a return exports with a blank inspector, reason or disease note. */
+function trim(s){ return String(s==null?'':s).replace(/^\s+/,'').replace(/\s+$/,''); }
+/* Strict number: blank stays blank (null), rubbish stays rubbish (undefined-as-NaN
+   is never silently turned into 0). A blank field means "not counted", which is
+   not the same statement as "counted, and it was zero". */
+function strictNum(v){
+  if(v===null || v===undefined) return null;
+  var s = String(v).replace(/\s/g,'').replace(',','.');
+  if(s==='') return null;
+  if(!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
+  return parseFloat(s);
+}
+function n0(v){ var x = strictNum(v); return (x===null || isNaN(x)) ? 0 : x; }
+function fmt(x){
+  if(x===null||x===undefined||isNaN(x)) return '–';
+  var s = (Math.round(x*100)/100).toString().replace('.', ',');
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+function uid(){
+  return 'r' + (new Date()).getTime().toString(36) +
+         Math.floor(Math.random()*1e6).toString(36);
+}
+/* Dates are built from the LOCAL clock, never from toISOString(). South Africa is
+   UTC+2, so between midnight and 02:00 the UTC date is still yesterday -- an
+   inspector finishing a return late at night would have filed it under the wrong
+   day, and the default period under the wrong month. */
+function pad2(n){ return (n<10?'0':'') + n; }
+function today(){
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+}
+function lastMonth(){
+  var d = new Date(), y = d.getFullYear(), m = d.getMonth();   /* 0-based */
+  m -= 1; if(m < 0){ m = 11; y -= 1; }
+  return y + '-' + pad2(m+1);
+}
+function isWhole(x){ return x === Math.floor(x); }
+function monthName(p){
+  if(!/^\d{4}-\d{2}$/.test(p)) return p || '–';
+  var m = ["January","February","March","April","May","June","July",
+           "August","September","October","November","December"];
+  return m[parseInt(p.slice(5,7),10)-1] + ' ' + p.slice(0,4);
+}
+function periodEnd(p){
+  if(!/^\d{4}-\d{2}$/.test(p)) return '';
+  var y = parseInt(p.slice(0,4),10), m = parseInt(p.slice(5,7),10);
+  var d = new Date(Date.UTC(y, m, 0));
+  return d.toISOString().slice(0,10);
+}
+function abaName(id){
+  for(var i=0;i<ABATTOIRS.length;i++) if(ABATTOIRS[i][0]===id) return ABATTOIRS[i][1];
+  return '';
+}
+function abaSpecies(id){
+  for(var i=0;i<ABATTOIRS.length;i++) if(ABATTOIRS[i][0]===id)
+    return ABATTOIRS[i][2] ? ABATTOIRS[i][2].split(',') : [];
+  return [];
+}
+function isNotifiable(item){
+  for(var i=0;i<WC.length;i++){
+    if(!WC[i].notify) continue;
+    for(var j=0;j<WC[i].items.length;j++) if(WC[i].items[j]===item) return true;
+  }
+  return false;
+}
+
+/* ---------- return model ---------- */
+
+function newReturn(){
+  return { id:uid(), org:null, period:lastMonth(), species:[], inspector:'',
+           noSlaughter:false, noSlaughterReason:'', notes:'',
+           data:{}, status:'draft', created:today(), updated:today() };
+}
+function getReturn(id){
+  for(var i=0;i<db.returns.length;i++) if(db.returns[i].id===id) return db.returns[i];
+  return null;
+}
+/* Per-species block. Created lazily so an untouched species carries no numbers. */
+function spBlock(r, sp){
+  if(!r.data[sp]) r.data[sp] = { slaughtered:'', condPassed:'', wc:{}, pc:{}, offal:{}, lair:{} };
+  return r.data[sp];
+}
+/* Any edit to a return that was already marked sent drops it back to draft: the
+   copy on the phone no longer matches what the manager received, and the list must
+   not keep claiming it does. */
+function touch(r){
+  r.updated = today();
+  if(r.status==='sent') r.status = 'draft';
+  save();
+}
+
+/* Counters used on the summary cards. Each returns its own unit -- they are
+   deliberately never combined. */
+function wcTotal(b){ var t=0,k; for(k in b.wc) if(b.wc.hasOwnProperty(k)) t += n0(b.wc[k].v); return t; }
+function wcLines(b){ var c=0,k; for(k in b.wc) if(b.wc.hasOwnProperty(k)) c++; return c; }
+function pcTotal(b){ var t=0,k; for(k in b.pc) if(b.pc.hasOwnProperty(k)) t += n0(b.pc[k]); return t; }
+function pcLines(b){ var c=0,k; for(k in b.pc) if(b.pc.hasOwnProperty(k)) c++; return c; }
+function offalOrgans(b){
+  var t=0,k,o;
+  for(k in b.offal) if(b.offal.hasOwnProperty(k))
+    for(o in b.offal[k]) if(b.offal[k].hasOwnProperty(o)) t += n0(b.offal[k][o]);
+  return t;
+}
+function offalLines(b){ var c=0,k; for(k in b.offal) if(b.offal.hasOwnProperty(k)) c++; return c; }
+function lairTotal(b){ var t=0,k; for(k in b.lair) if(b.lair.hasOwnProperty(k)) t += n0(b.lair[k]); return t; }
+function lairLines(b){ var c=0,k; for(k in b.lair) if(b.lair.hasOwnProperty(k)) c++; return c; }
+/* "Has the inspector put anything into this species?" -- used before dropping a
+   species and before accepting a nil return. It must count an explicit zero and a
+   lairage-only capture (animals dead on arrival, none slaughtered) as real work,
+   or the app quietly throws away the very figures it exists to collect. */
+function blockUsed(b){
+  if(!b) return false;
+  if(strictNum(b.slaughtered)!==null) return true;
+  if(strictNum(b.condPassed)!==null) return true;
+  return !!(wcLines(b) || pcLines(b) || offalLines(b) || lairLines(b));
+}
+/* Two different questions, and they must not share an answer.
+   ...Selected: what would go out on this return right now. Used by the nil-return
+   check, because a species the inspector deliberately removed will not be sent.
+   ...Held: everything captured and still on the phone, including species that were
+   removed. Used by the abattoir guard, because a removed species can be re-selected
+   in two taps and its old figures would then belong to the new abattoir. */
+function anyFiguresSelected(r){
+  for(var i=0;i<r.species.length;i++) if(blockUsed(r.data[r.species[i]])) return true;
+  return false;
+}
+function anyFiguresHeld(r){
+  var k;
+  for(k in r.data) if(r.data.hasOwnProperty(k) && blockUsed(r.data[k])) return true;
+  return false;
+}
+/* A line that exists but carries no number is not a zero. Totals count only lines
+   that actually carry a number, so adding a blank line cannot make the screen
+   assert a nil the inspector never entered. */
+function wcCounted(b){ var c=0,k,v; for(k in b.wc) if(b.wc.hasOwnProperty(k)){
+  v=strictNum(b.wc[k].v); if(v!==null&&!isNaN(v)) c++; } return c; }
+function pcCounted(b){ var c=0,k,v; for(k in b.pc) if(b.pc.hasOwnProperty(k)){
+  v=strictNum(b.pc[k]); if(v!==null&&!isNaN(v)) c++; } return c; }
+function condCounted(b,cond){ var c=0,o,v; if(!b.offal[cond]) return 0;
+  for(o in b.offal[cond]) if(b.offal[cond].hasOwnProperty(o)){
+    v=strictNum(b.offal[cond][o]); if(v!==null&&!isNaN(v)) c++; } return c; }
+function offalCounted(b){ var c=0,k; for(k in b.offal) if(b.offal.hasOwnProperty(k))
+  c += condCounted(b,k); return c; }
+function lairCounted(b){ var c=0,k,v; for(k in b.lair) if(b.lair.hasOwnProperty(k)){
+  v=strictNum(b.lair[k]); if(v!==null&&!isNaN(v)) c++; } return c; }
+/* The inspector's name is typed once on the home screen, but a return that has
+   been sent must keep the name it went out under. Marking a return sent freezes
+   it here; drafts follow whatever is currently on the home screen. */
+function inspectorOf(r){
+  if(r && typeof r.inspector === 'string' && trim(r.inspector)) return trim(r.inspector);
+  return trim(db.inspector);
+}
+/* "Nothing was recorded" is not "zero was recorded". Where no line has been added
+   at all, say so in words rather than printing a 0 the inspector never entered. */
+function measure(counted, value, unit, emptyWord){
+  return counted ? '<b>' + fmt(value) + '</b> ' + unit : (emptyWord || 'none recorded');
+}
+/* Most organs come one to an animal; kidneys and lungs come in pairs, and some
+   plants count a pluck as one. Anything above this is almost certainly a keying
+   slip -- but it stays a warning, because paperwork is not anatomy. */
+var ORGAN_MAX = { Heads:1, Tails:1, Tongues:1 };
+function organCap(o){ return ORGAN_MAX.hasOwnProperty(o) ? ORGAN_MAX[o] : 2; }
+
+/* ---------- validation ----------
+   Split into blocking problems and warnings. A problem means the return would
+   assert something the abattoir cannot have observed; a warning means it looks
+   unusual but may well be right. Nothing is silently corrected. */
+function validate(r){
+  var probs = [], warns = [], notifs = [];
+  if(!r.org) probs.push('No abattoir chosen.');
+  /* Month 01 to 12 only. A plain \d\d also accepts 2026-00 and 2026-99, which the
+     picker will not produce but damaged storage will. */
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(r.period)) probs.push('No valid month chosen.');
+  if(!inspectorOf(r)) probs.push('Your name is not filled in — set it on the home screen.');
+
+  if(r.noSlaughter){
+    if(!trim(r.noSlaughterReason)) probs.push('A nil return needs a reason.');
+    /* A nil return says nothing was slaughtered. If figures are already captured,
+       one of the two statements is false -- and sending the nil return would drop
+       them without a word. Make the inspector resolve it. */
+    if(anyFiguresSelected(r))
+      probs.push('This is marked as a nil return, but figures are already captured for ' +
+                 r.species.join(', ') + '. Either untick "no slaughter" or remove those species.');
+    return { probs:probs, warns:warns, notifs:notifs };
+  }
+  if(!r.species.length) probs.push('No species chosen for this month.');
+
+  for(var i=0;i<r.species.length;i++){
+    var sp = r.species[i], b = spBlock(r, sp);
+    var sl = strictNum(b.slaughtered);
+    if(sl===null) probs.push(sp + ': total slaughtered is blank.');
+    else if(isNaN(sl)) probs.push(sp + ': total slaughtered is not a number.');
+    else if(sl < 0) probs.push(sp + ': total slaughtered is negative.');
+    else if(!isWhole(sl)) probs.push(sp + ': total slaughtered is ' + b.slaughtered +
+      '. Animals are counted whole.');
+
+    /* Conditionally passed carcasses were previously exported without ever being
+       checked -- rubbish typed here left as an asserted 0. */
+    var cp = strictNum(b.condPassed);
+    if(cp!==null){
+      if(isNaN(cp)) probs.push(sp + ': conditionally passed (Cysticercosis) is not a number.');
+      else if(cp < 0) probs.push(sp + ': conditionally passed (Cysticercosis) is negative.');
+      else if(!isWhole(cp)) probs.push(sp + ': conditionally passed is ' + b.condPassed +
+        '. Carcasses are counted whole.');
+      else if(sl!==null && !isNaN(sl) && cp > sl)
+        probs.push(sp + ': ' + fmt(cp) + ' conditionally passed but only ' + fmt(sl) +
+                   ' slaughtered.');
+    }
+
+    var k, v;
+    for(k in b.wc) if(b.wc.hasOwnProperty(k)){
+      v = strictNum(b.wc[k].v);
+      if(v===null || isNaN(v)) probs.push(sp + ' – ' + k + ': condemned head is blank or not a number.');
+      else if(v < 0) probs.push(sp + ' – ' + k + ': condemned head is negative.');
+      else if(!isWhole(v)) probs.push(sp + ' – ' + k + ': ' + b.wc[k].v +
+        ' carcasses. Carcasses are counted whole.');
+      else if(v > 0 && isNotifiable(k)){
+        notifs.push({ sp:sp, item:k, v:v, note:trim(b.wc[k].note) });
+        if(!trim(b.wc[k].note)) probs.push(sp + ' – ' + k +
+          ': controlled disease needs a note (date, case detail, who was told).');
+      }
+    }
+    var wcT = wcTotal(b);
+    if(sl!==null && !isNaN(sl) && sl >= 0 && wcT > sl)
+      probs.push(sp + ': ' + fmt(wcT) + ' carcasses condemned but only ' + fmt(sl) +
+                 ' slaughtered. One of the two is wrong.');
+
+    for(k in b.pc) if(b.pc.hasOwnProperty(k)){
+      v = strictNum(b.pc[k]);
+      if(v===null || isNaN(v)) probs.push(sp + ' – ' + k + ': partial condemnation (kg) is blank or not a number.');
+      else if(v < 0) probs.push(sp + ' – ' + k + ': partial condemnation (kg) is negative.');
+    }
+
+    var org, cond;
+    for(cond in b.offal) if(b.offal.hasOwnProperty(cond)){
+      var counted = 0, positive = 0;
+      for(org in b.offal[cond]) if(b.offal[cond].hasOwnProperty(org)){
+        v = strictNum(b.offal[cond][org]);
+        if(v===null || isNaN(v)) probs.push(sp + ' – ' + cond + ' – ' + org + ': not a number.');
+        else if(v < 0) probs.push(sp + ' – ' + cond + ' – ' + org + ': negative.');
+        else if(!isWhole(v)) probs.push(sp + ' – ' + cond + ' – ' + org + ': ' +
+          b.offal[cond][org] + ' organs. Organs are counted whole.');
+        else { counted++; if(v > 0) positive++; }
+      }
+      /* "nothing counted yet" and "counted, and it was nil" are different statements
+         and get different words. The first one blocks: a condition carrying no
+         count at all would export a row with nothing behind it. */
+      if(!counted) probs.push(sp + ' – ' + cond +
+        ': added to offal but no organ counted. Enter the counts, or remove it.');
+      else if(!positive) warns.push(sp + ' – ' + cond + ': every organ counted came to nil.');
+    }
+    /* Sanity check against the animal, organ by organ. One head per beast, two
+       kidneys. Comparing organs with animals is legitimate here because both
+       describe the same herd -- what would be wrong is adding them together. */
+    if(sl!==null && !isNaN(sl) && sl > 0){
+      for(cond in b.offal) if(b.offal.hasOwnProperty(cond))
+        for(org in b.offal[cond]) if(b.offal[cond].hasOwnProperty(org)){
+          v = n0(b.offal[cond][org]);
+          var cap = organCap(org);
+          if(v > sl*cap) warns.push(sp + ' – ' + cond + ' – ' + org + ': ' + fmt(v) +
+            ' off ' + fmt(sl) + ' animals, which is more than ' + cap + ' per animal. Check this.');
+        }
+    }
+    for(k in b.lair) if(b.lair.hasOwnProperty(k)){
+      v = strictNum(b.lair[k]);
+      if(v===null || isNaN(v)) probs.push(sp + ' – lairage – ' + k + ': not a number.');
+      else if(v < 0) probs.push(sp + ' – lairage – ' + k + ': negative.');
+      else if(!isWhole(v)) probs.push(sp + ' – lairage – ' + k + ': ' + b.lair[k] +
+        '. Animals are counted whole.');
+    }
+    if(sl===0 && (wcT>0 || pcTotal(b)>0 || offalOrgans(b)>0))
+      probs.push(sp + ': nothing slaughtered, yet condemnations are recorded.');
+  }
+  return { probs:probs, warns:warns, notifs:notifs };
+}
+
+/* ---------- export ----------
+   Shape mirrors the NAHDIS tables exactly: FormData -> FormDataItems ->
+   FormDataItemParts. Offal container rows carry value 0 and the real numbers sit
+   in parts, which is how the existing 97 369 offal rows are stored. */
+function buildPayload(r){
+  var out = { form:'Schedule 8', formVersion:2, source:'Schedule 8 Mobile',
+    abattoir:{ orgId:r.org, name:abaName(r.org) },
+    period:{ month:r.period, start:r.period+'-01', end:periodEnd(r.period) },
+    inspector:inspectorOf(r), capturedAt:r.updated,
+    noSlaughter:!!r.noSlaughter, noSlaughterReason:r.noSlaughterReason||'',
+    notes:r.notes||'', items:[] };
+  if(r.noSlaughter) return out;
+
+  for(var i=0;i<r.species.length;i++){
+    var sp = r.species[i], b = spBlock(r, sp), k, cond, org;
+
+    out.items.push({ group:'SLAUGHTERED', subGroup:'Total Slaughtered', item:'',
+                     specie:sp, value:String(n0(b.slaughtered)), unit:'head' });
+    /* Exported only when it is a real number the inspector actually typed. A blank
+       stays out of the return entirely; rubbish is blocked upstream by validate(). */
+    var cpv = strictNum(b.condPassed);
+    if(cpv!==null && !isNaN(cpv))
+      out.items.push({ group:'SLAUGHTERED', subGroup:'Conditionally Passed Carcases',
+                       item:'Cysticercosis', specie:sp,
+                       value:String(cpv), unit:'head' });
+
+    for(k in b.wc) if(b.wc.hasOwnProperty(k))
+      out.items.push({ group:'CONDEMNATION STATISTICS', subGroup:wcSubGroup(k), item:k,
+                       specie:sp, value:String(n0(b.wc[k].v)), unit:'head',
+                       notifiable:isNotifiable(k), notes:b.wc[k].note||'' });
+
+    for(k in b.pc) if(b.pc.hasOwnProperty(k))
+      out.items.push({ group:'CONDEMNATION STATISTICS', subGroup:'Partially Condemned Diseases',
+                       item:k, specie:sp, value:String(n0(b.pc[k])), unit:'kg' });
+
+    for(cond in b.offal) if(b.offal.hasOwnProperty(cond)){
+      /* An organ the inspector counted and found clean is a nil, and a nil is a
+         finding. It travels. Only organs never looked at are left out. */
+      var parts = [];
+      for(org in b.offal[cond]) if(b.offal[cond].hasOwnProperty(org)){
+        var pv = strictNum(b.offal[cond][org]);
+        if(pv!==null && !isNaN(pv)) parts.push({ part:org, value:pv });
+      }
+      out.items.push({ group:'OFFAL CONDEMNATIONS', subGroup:'', item:cond, specie:sp,
+                       value:'0', unit:'organs', parts:parts });
+    }
+
+    for(k in b.lair) if(b.lair.hasOwnProperty(k))
+      out.items.push({ group:'LAIRAGE REPORT', subGroup:'NUMBER OF ANIMALS -', item:k,
+                       specie:sp, value:String(n0(b.lair[k])), unit:'head' });
+  }
+  return out;
+}
+function wcSubGroup(item){
+  for(var i=0;i<WC.length;i++)
+    for(var j=0;j<WC[i].items.length;j++)
+      if(WC[i].items[j]===item) return WC[i].db;
+  return 'Other';
+}
+
+/* Plain-text summary -- what gets pasted into WhatsApp or an email when there is
+   no connectivity at the abattoir. */
+function buildText(r){
+  var L = [], i, k, cond, org;
+  L.push('SCHEDULE 8 — ' + abaName(r.org));
+  L.push(monthName(r.period) + '   (ORG ' + r.org + ')');
+  L.push('Inspector: ' + inspectorOf(r));
+  L.push('');
+  if(r.noSlaughter){
+    L.push('NIL RETURN — no slaughter this month.');
+    L.push('Reason: ' + r.noSlaughterReason);
+    return L.join('\n');
+  }
+  for(i=0;i<r.species.length;i++){
+    var sp = r.species[i], b = spBlock(r, sp);
+    L.push('== ' + sp.toUpperCase() + ' ==');
+    L.push('Slaughtered: ' + fmt(n0(b.slaughtered)) + ' head');
+    if(strictNum(b.condPassed)!==null)
+      L.push('Conditionally passed (Cysticercosis): ' + fmt(n0(b.condPassed)) + ' head');
+
+    if(wcLines(b)){
+      L.push('Whole carcasses condemned (head):');
+      for(k in b.wc) if(b.wc.hasOwnProperty(k))
+        L.push('  ' + k + ': ' + fmt(n0(b.wc[k].v)) +
+               (isNotifiable(k) ? '   ** CONTROLLED DISEASE **' : '') +
+               (b.wc[k].note ? '\n     note: ' + b.wc[k].note : ''));
+      L.push('  Total condemned: ' + fmt(wcTotal(b)) + ' head');
+    }
+    if(pcLines(b)){
+      L.push('Partially condemned (kilograms):');
+      for(k in b.pc) if(b.pc.hasOwnProperty(k)) L.push('  ' + k + ': ' + fmt(n0(b.pc[k])) + ' kg');
+      L.push('  Total: ' + fmt(pcTotal(b)) + ' kg');
+    }
+    if(offalLines(b)){
+      L.push('Offal condemned (organs):');
+      for(cond in b.offal) if(b.offal.hasOwnProperty(cond)){
+        var bits = [];
+        for(org in b.offal[cond]) if(b.offal[cond].hasOwnProperty(org)){
+          var v = n0(b.offal[cond][org]);
+          if(v>0) bits.push(org + ' ' + fmt(v));
+        }
+        if(bits.length) L.push('  ' + cond + ': ' + bits.join(', '));
+      }
+      L.push('  Total organs: ' + fmt(offalOrgans(b)));
+    }
+    if(lairTotal(b) > 0 || Object.keys(b.lair).length){
+      L.push('Lairage:');
+      for(k in b.lair) if(b.lair.hasOwnProperty(k)) L.push('  ' + k + ': ' + fmt(n0(b.lair[k])));
+    }
+    L.push('');
+  }
+  if(r.notes){ L.push('Notes: ' + r.notes); L.push(''); }
+  L.push('Head, kilograms and organ counts are three different measures and are');
+  L.push('reported separately. They are not added together.');
+  return L.join('\n');
+}
+
+/* ---------- views ---------- */
+
+var app;
+function render(){
+  app.innerHTML = ui.view==='home'   ? vHome()
+                : ui.view==='ret'    ? vReturn()
+                : ui.view==='sp'     ? vSpecies()
+                : ui.view==='pick'   ? vPick()
+                : ui.view==='offal'  ? vOffal()
+                : ui.view==='review' ? vReview()
+                : ui.view==='export' ? vExport()
+                : vHome();
+  window.scrollTo(0, 0);
+}
+function go(view, keep){
+  if(!keep) ui.q = '';
+  ui.view = view;
+  render();
+  pushHist();
+}
+
+/* The phone's own back button/gesture should step up one screen, not throw the
+   inspector out of a half-captured return. At home nothing is pushed, so back
+   leaves the app as it normally would. Guarded: file:// blocks pushState in some
+   browsers, and the app must still work when it does. */
+var BACKTO = { home:null, ret:'home', sp:'ret', pick:'sp', offal:'sp',
+               review:'ret', 'export':'review' };
+var histOn = false;
+function pushHist(){
+  if(!histOn || ui.view==='home') return;
+  try { window.history.pushState({ v:ui.view }, ''); } catch(e){ histOn = false; }
+}
+function onPop(){
+  var to = BACKTO[ui.view];
+  if(!to) return;                 /* already home -- let the browser go back */
+  ui.q = ''; ui.view = to; render(); pushHist();
+}
+function top(title, sub, back){
+  return '<div class="top">' +
+    (back ? '<button class="back" data-go="'+esc(back)+'">‹</button>' : '') +
+    '<h1>' + esc(title) + (sub ? '<span class="sub">'+esc(sub)+'</span>' : '') + '</h1></div>';
+}
+
+function vHome(){
+  var h = top('Schedule 8', 'Monthly abattoir return · NAHDIS');
+  h += '<div class="wrap">';
+  h += '<div class="card"><label for="insp">Your name (goes on every return)</label>' +
+       '<input id="insp" type="text" autocomplete="name" value="'+esc(db.inspector)+'" ' +
+       'placeholder="e.g. T. Neethling"></div>';
+
+  if(!db.returns.length){
+    h += '<div class="empty">No returns yet.<br>Start this month’s return below.</div>';
+  } else {
+    h += '<div class="list">';
+    var sorted = db.returns.slice().sort(function(a,b){
+      var ka = a.period + a.updated, kb = b.period + b.updated;
+      return ka < kb ? 1 : (ka > kb ? -1 : 0); });
+    for(var i=0;i<sorted.length;i++){
+      var r = sorted[i], st = r.status;
+      h += '<button class="item" data-open="'+esc(r.id)+'">' +
+           '<span class="pill '+st+'">'+ (st==='sent'?'exported':st) +'</span> ' +
+           esc(abaName(r.org) || 'No abattoir chosen') +
+           '<span class="sub">' + esc(monthName(r.period)) +
+           (r.noSlaughter ? ' · nil return'
+                          : (r.species.length ? ' · ' + esc(r.species.join(', ')) : ' · no species yet')) +
+           '</span></button>';
+    }
+    h += '</div>';
+  }
+  h += '</div><div class="bar"><button class="btn" data-new="1">+ New return</button></div>';
+  return h;
+}
+
+function vReturn(){
+  var r = getReturn(ui.rid);
+  if(!r) return vHome();
+  var h = top(abaName(r.org) || 'New return', monthName(r.period), 'home');
+  h += '<div class="wrap">';
+
+  h += '<div class="card">';
+  h += '<label for="org">Abattoir</label><select id="org"><option value="">— choose —</option>';
+  for(var i=0;i<ABATTOIRS.length;i++)
+    h += '<option value="'+ABATTOIRS[i][0]+'"'+(r.org===ABATTOIRS[i][0]?' selected':'')+'>' +
+         esc(ABATTOIRS[i][1]) + '</option>';
+  h += '</select>';
+  h += '<label for="per">Month being reported</label>' +
+       '<input id="per" type="month" value="'+esc(r.period)+'">';
+  h += '</div>';
+
+  h += '<div class="card"><h3>Nil return</h3>' +
+       '<div class="row"><label for="nos" style="margin:0">No slaughter took place this month</label>' +
+       '<input id="nos" type="checkbox" class="flexnone" style="width:24px;height:24px"' +
+       (r.noSlaughter?' checked':'') + '></div>';
+  if(r.noSlaughter)
+    h += '<label for="nosr">Reason</label><textarea id="nosr" placeholder="e.g. plant closed for maintenance 1–31 July">'+esc(r.noSlaughterReason)+'</textarea>';
+  h += '</div>';
+
+  if(!r.noSlaughter){
+    h += '<div class="card"><h3>Species slaughtered this month</h3>';
+    var suggested = r.org ? abaSpecies(r.org) : [];
+    var listed = SPECIES.slice();
+    for(var s=0;s<r.species.length;s++)
+      if(listed.indexOf(r.species[s])<0) listed.push(r.species[s]);
+    for(var j=0;j<listed.length;j++){
+      var sp = listed[j], on = r.species.indexOf(sp)>=0;
+      var hint = (!on && suggested.indexOf(sp)>=0) ? ' ·' : '';
+      h += '<button class="chip'+(on?' on':'')+'" data-sp="'+esc(sp)+'">'+esc(sp)+hint+'</button>';
+    }
+    h += '<div class="tiny" style="margin-top:6px">A dot marks what this abattoir usually slaughters.</div></div>';
+
+    for(var k=0;k<r.species.length;k++){
+      var spn = r.species[k], b = spBlock(r, spn);
+      var sl = strictNum(b.slaughtered);
+      h += '<div class="card"><h2>'+esc(spn)+'</h2>' +
+           '<div class="muted">' +
+           (sl===null||isNaN(sl) ? 'Slaughtered figure still blank' : fmt(sl)+' slaughtered') +
+           '</div>' +
+           '<div class="tiny" style="margin:8px 0 10px">' +
+             'Condemned whole: ' + measure(wcCounted(b), wcTotal(b), 'head') + '<br>' +
+             'Partial: ' + measure(pcCounted(b), pcTotal(b), 'kg') + '<br>' +
+             'Offal: ' + measure(offalCounted(b), offalOrgans(b), 'organs') +
+           '</div>' +
+           '<button class="btn sec" data-sp-open="'+esc(spn)+'">Open '+esc(spn)+'</button></div>';
+    }
+  }
+
+  h += '<div class="card"><label for="rnotes">Notes for the regional manager (optional)</label>' +
+       '<textarea id="rnotes">'+esc(r.notes||'')+'</textarea></div>';
+  h += '<button class="btn warn" data-del="'+esc(r.id)+'">Delete this return</button>';
+  h += '</div>';
+  h += '<div class="bar"><button class="btn" data-go="review">Check &amp; export</button></div>';
+  return h;
+}
+
+function vSpecies(){
+  var r = getReturn(ui.rid); if(!r) return vHome();
+  var sp = ui.sp, b = spBlock(r, sp);
+  var h = top(sp, abaName(r.org) + ' · ' + monthName(r.period), 'ret');
+  h += '<div class="wrap">';
+
+  h += '<div class="card"><h3>Throughput</h3>' +
+       '<label for="sl">Total slaughtered (head)</label>' +
+       '<input id="sl" type="text" inputmode="numeric" value="'+esc(b.slaughtered)+'">' +
+       '<label for="cp">Conditionally passed — Cysticercosis (head)</label>' +
+       '<input id="cp" type="text" inputmode="numeric" value="'+esc(b.condPassed)+'">' +
+       '</div>';
+
+  /* whole carcass */
+  h += '<div class="list"><div class="sechead">Whole carcasses condemned — head</div>';
+  var k, any = false;
+  for(k in b.wc) if(b.wc.hasOwnProperty(k)){
+    any = true;
+    var nf = isNotifiable(k);
+    h += '<div class="lrow"><div class="nm">' + esc(k) +
+         (nf ? ' <span class="pill notif">controlled</span>' : '') +
+         (nf ? '<small>' + (b.wc[k].note ? esc(b.wc[k].note) : 'Note required — tap to add') + '</small>' : '') +
+         '</div>' +
+         '<input type="text" inputmode="numeric" data-wc="'+esc(k)+'" value="'+esc(b.wc[k].v)+'">' +
+         '<button class="x" data-rm-wc="'+esc(k)+'">×</button></div>';
+    if(nf)
+      h += '<div class="lrow"><input type="text" style="width:100%;text-align:left" ' +
+           'data-wcnote="'+esc(k)+'" value="'+esc(b.wc[k].note||'')+'" ' +
+           'placeholder="Date, case detail, who was notified"></div>';
+  }
+  if(!any) h += '<div class="empty">Nothing condemned whole. Add a condition if there was.</div>';
+  else h += '<div class="tot"><span>Total condemned</span><span id="tot-wc">' +
+            measure(wcCounted(b), wcTotal(b), 'head', 'nothing counted yet') + '</span></div>';
+  h += '</div>';
+  h += '<button class="btn sec" data-pick="wc" style="margin-bottom:14px">+ Add a whole-carcass condemnation</button>';
+
+  /* partial, kg */
+  h += '<div class="list"><div class="sechead">Partially condemned — kilograms</div>';
+  any = false;
+  for(k in b.pc) if(b.pc.hasOwnProperty(k)){
+    any = true;
+    h += '<div class="lrow"><div class="nm">'+esc(k)+'<small>kilograms</small></div>' +
+         '<input type="text" inputmode="decimal" data-pc="'+esc(k)+'" value="'+esc(b.pc[k])+'">' +
+         '<button class="x" data-rm-pc="'+esc(k)+'">×</button></div>';
+  }
+  if(!any) h += '<div class="empty">No partial condemnations.</div>';
+  else h += '<div class="tot"><span>Total trimmed</span><span id="tot-pc">' +
+            measure(pcCounted(b), pcTotal(b), 'kg', 'nothing counted yet') + '</span></div>';
+  h += '</div>';
+  h += '<button class="btn sec" data-pick="pc" style="margin-bottom:14px">+ Add a partial condemnation</button>';
+
+  /* offal */
+  h += '<div class="list"><div class="sechead">Offal condemned — organs</div>';
+  any = false;
+  for(k in b.offal) if(b.offal.hasOwnProperty(k)){
+    any = true;
+    var bits = [], org, tot = 0;
+    for(org in b.offal[k]) if(b.offal[k].hasOwnProperty(org)){
+      var v = n0(b.offal[k][org]);
+      if(v>0){ bits.push(org+' '+fmt(v)); tot += v; }
+    }
+    h += '<button class="item" data-offal="'+esc(k)+'">'+esc(k) +
+         '<span class="sub">' + (bits.length ? esc(bits.join(', ')) : 'no organs entered yet') +
+         (tot ? ' · ' + fmt(tot) + ' total' : '') + '</span></button>';
+  }
+  if(!any) h += '<div class="empty">No offal condemned.<br>' +
+    '<span class="tiny">This is usually the biggest number on the return.</span></div>';
+  else h += '<div class="tot"><span>Total organs</span><span id="tot-offal">' +
+            measure(offalCounted(b), offalOrgans(b), 'organs', 'nothing counted yet') + '</span></div>';
+  h += '</div>';
+  h += '<button class="btn sec" data-pick="offal" style="margin-bottom:14px">+ Add an offal condition</button>';
+
+  /* lairage */
+  h += '<div class="list"><div class="sechead">Lairage — number of animals</div>';
+  for(var i=0;i<LAIR.length;i++){
+    var key = LAIR[i];
+    h += '<div class="lrow"><div class="nm">'+esc(key)+'</div>' +
+         '<input type="text" inputmode="numeric" data-lair="'+esc(key)+'" value="' +
+         esc(b.lair.hasOwnProperty(key) ? b.lair[key] : '') + '"></div>';
+  }
+  h += '<div class="tiny" style="padding:8px 12px">Leave blank if it did not happen. ' +
+       'Blank is not the same as zero — zero says you counted.</div></div>';
+
+  h += '</div><div class="bar"><button class="btn" data-go="ret">Done with '+esc(sp)+'</button></div>';
+  return h;
+}
+
+/* search-and-add picker; the list re-renders on its own so the search box keeps focus */
+function vPick(){
+  var r = getReturn(ui.rid); if(!r) return vHome();
+  var titles = { wc:'Whole-carcass condemnation', pc:'Partial condemnation (kg)',
+                 offal:'Offal condition' };
+  var h = top(titles[ui.pane]||'Add', ui.sp + ' · ' + monthName(r.period), 'sp');
+  h += '<div class="wrap"><div class="search">' +
+       '<input id="q" type="search" placeholder="Type to find a condition…" ' +
+       'autocomplete="off" autocorrect="off" value="'+esc(ui.q)+'"></div>' +
+       '<div class="list" id="picklist">' + pickList() + '</div></div>';
+  return h;
+}
+function pickList(){
+  var r = getReturn(ui.rid), b = spBlock(r, ui.sp);
+  var q = (ui.q||'').toLowerCase(), h = '', shown = 0, i, j;
+
+  if(ui.pane==='wc'){
+    for(i=0;i<WC.length;i++){
+      var grp = WC[i], rows = '';
+      for(j=0;j<grp.items.length;j++){
+        var it = grp.items[j];
+        if(q && it.toLowerCase().indexOf(q)<0) continue;
+        var have = b.wc.hasOwnProperty(it);
+        rows += '<button class="item" data-add="'+esc(it)+'"'+(have?' disabled style="opacity:.45"':'')+'>' +
+                esc(it) + (grp.notify ? ' <span class="pill notif">controlled</span>' : '') +
+                (have ? '<span class="sub">already on this return</span>' : '') + '</button>';
+        shown++;
+      }
+      if(rows) h += '<div class="sechead">'+esc(grp.g)+'</div>' + rows;
+    }
+  } else {
+    var src = ui.pane==='pc' ? PC : OFFAL;
+    var bag = ui.pane==='pc' ? b.pc : b.offal;
+    for(i=0;i<src.length;i++){
+      var nm = src[i];
+      if(q && nm.toLowerCase().indexOf(q)<0) continue;
+      var got = bag.hasOwnProperty(nm);
+      h += '<button class="item" data-add="'+esc(nm)+'"'+(got?' disabled style="opacity:.45"':'')+'>' +
+           esc(nm) + (got ? '<span class="sub">already on this return</span>' : '') + '</button>';
+      shown++;
+    }
+  }
+  if(!shown) h = '<div class="empty">Nothing matches “'+esc(ui.q)+'”.</div>';
+  return h;
+}
+
+function vOffal(){
+  var r = getReturn(ui.rid); if(!r) return vHome();
+  var b = spBlock(r, ui.sp), cond = ui.cond;
+  if(!b.offal[cond]) b.offal[cond] = {};
+  var h = top(cond, ui.sp + ' · offal condemned', 'sp');
+  h += '<div class="wrap">';
+  h += '<div class="infobox">Count the <b>organs</b> condemned for this condition — not the animals. ' +
+       'Leave an organ blank if it was not affected.</div>';
+  h += '<div class="list">';
+  for(var i=0;i<ORGANS.length;i++){
+    var o = ORGANS[i];
+    h += '<div class="lrow"><div class="nm">'+esc(o)+'</div>' +
+         '<input type="text" inputmode="numeric" data-org="'+esc(o)+'" value="' +
+         esc(b.offal[cond].hasOwnProperty(o) ? b.offal[cond][o] : '') + '"></div>';
+  }
+  var t = 0, k;
+  for(k in b.offal[cond]) if(b.offal[cond].hasOwnProperty(k)) t += n0(b.offal[cond][k]);
+  h += '<div class="tot"><span>'+esc(cond)+'</span><span id="tot-cond">' +
+       measure(condCounted(b,cond), t, 'organs', 'nothing counted yet') + '</span></div></div>';
+  h += '<button class="btn warn" data-rm-offal="'+esc(cond)+'">Remove '+esc(cond)+'</button>';
+  h += '</div><div class="bar"><button class="btn" data-go="sp">Done</button></div>';
+  return h;
+}
+
+function vReview(){
+  var r = getReturn(ui.rid); if(!r) return vHome();
+  var v = validate(r);
+  var h = top('Check the return', abaName(r.org) + ' · ' + monthName(r.period), 'ret');
+  h += '<div class="wrap">';
+
+  if(v.notifs.length){
+    h += '<div class="warnbox"><b>Controlled disease on this return.</b><br>';
+    for(var i=0;i<v.notifs.length;i++)
+      h += esc(v.notifs[i].item) + ' — ' + esc(v.notifs[i].sp) + ', ' +
+           fmt(v.notifs[i].v) + ' head<br>';
+    h += '<br>A monthly return is not a notification. The state veterinarian must ' +
+         'already have been told on the day it was found.</div>';
+  }
+  if(v.probs.length){
+    h += '<div class="warnbox"><b>Fix before exporting</b><ul style="margin:6px 0 0;padding-left:18px">';
+    for(var j=0;j<v.probs.length;j++) h += '<li>'+esc(v.probs[j])+'</li>';
+    h += '</ul></div>';
+  }
+  if(v.warns.length){
+    h += '<div class="infobox"><b>Worth a second look</b><ul style="margin:6px 0 0;padding-left:18px">';
+    for(var w=0;w<v.warns.length;w++) h += '<li>'+esc(v.warns[w])+'</li>';
+    h += '</ul></div>';
+  }
+  if(!v.probs.length && !v.warns.length)
+    h += '<div class="okbox">Nothing to query. The return is ready to send.</div>';
+
+  if(!r.noSlaughter){
+    for(var s=0;s<r.species.length;s++){
+      var sp = r.species[s], b = spBlock(r, sp);
+      var slN = strictNum(b.slaughtered), canRate = (slN!==null && !isNaN(slN) && slN>0);
+      h += '<div class="card"><h2>'+esc(sp)+'</h2>' +
+        '<div class="tiny" style="margin-top:6px">' +
+        'Slaughtered <b>'+fmt(slN)+'</b> head<br>' +
+        'Condemned whole ' + measure(wcCounted(b), wcTotal(b), 'head') +
+        (canRate && wcCounted(b)
+           ? ' · ' + fmt(wcTotal(b)/slN*100) + '% of the ' + esc(sp.toLowerCase()) + ' slaughtered'
+           : '') + '<br>' +
+        'Partially condemned ' + measure(pcCounted(b), pcTotal(b), 'kg') + '<br>' +
+        'Offal condemned ' + measure(offalCounted(b), offalOrgans(b), 'organs') +
+        (offalCounted(b) ? ' across ' + offalLines(b) + ' condition(s)' : '') +
+        (canRate && offalCounted(b) ? ' · ' + fmt(offalOrgans(b)/slN*100) +
+          ' organs per 100 animals slaughtered' : '') + '<br>' +
+        'Lairage losses ' + measure(lairCounted(b), lairTotal(b), 'animals') +
+        '</div></div>';
+    }
+    h += '<div class="tiny" style="padding:0 4px 12px">Head, kilograms and organs are three ' +
+         'separate measures. Nothing above adds them together.</div>';
+  }
+  h += '</div>';
+  h += '<div class="bar">' +
+       '<button class="btn sec" data-go="ret">Back</button>' +
+       '<button class="btn" data-export="1"'+(v.probs.length?' disabled':'')+'>Export</button></div>';
+  return h;
+}
+
+function vExport(){
+  var r = getReturn(ui.rid); if(!r) return vHome();
+  var txt = buildText(r);
+  var json = JSON.stringify(buildPayload(r), null, 1);
+  var h = top('Send the return', abaName(r.org) + ' · ' + monthName(r.period), 'review');
+  h += '<div class="wrap">';
+  h += '<div class="infobox">Copy one of these and send it to your regional manager. ' +
+       'The return stays on this phone until you delete it.</div>';
+  h += '<div class="card"><h3>For WhatsApp or e-mail</h3>' +
+       '<textarea class="out" id="txt" readonly>'+esc(txt)+'</textarea>' +
+       '<button class="btn sec" data-copy="txt" style="margin-top:8px">Copy the summary</button></div>';
+  h += '<div class="card"><h3>For the NAHDIS system</h3>' +
+       '<div class="tiny" style="margin-bottom:6px">Machine-readable. Loads straight into the ' +
+       'Schedule 8 tables — give this one to the office.</div>' +
+       '<textarea class="out" id="jsn" readonly>'+esc(json)+'</textarea>' +
+       '<button class="btn sec" data-copy="jsn" style="margin-top:8px">Copy the data file</button></div>';
+  h += '</div><div class="bar">' +
+       '<button class="btn sec" data-go="ret">Keep editing</button>' +
+       '<button class="btn" data-sent="1">Mark as sent</button></div>';
+  return h;
+}
+
+/* ---------- events ---------- */
+
+/* Live totals. The species screen's total rows would otherwise sit stale until the
+   inspector navigated away, so they are patched in place -- never by re-rendering,
+   which would take the keyboard focus off the field being typed into. */
+function refreshTotals(){
+  var r = getReturn(ui.rid);
+  if(!r || !ui.sp || !r.data[ui.sp]) return;
+  /* Same wording as the render path, or typing a value and then clearing it would
+     leave a 0 on screen that the freshly rendered page would not show. */
+  var b = r.data[ui.sp], el;
+  el = document.getElementById('tot-wc');
+  if(el) el.innerHTML = measure(wcCounted(b), wcTotal(b), 'head', 'nothing counted yet');
+  el = document.getElementById('tot-pc');
+  if(el) el.innerHTML = measure(pcCounted(b), pcTotal(b), 'kg', 'nothing counted yet');
+  el = document.getElementById('tot-offal');
+  if(el) el.innerHTML = measure(offalCounted(b), offalOrgans(b), 'organs', 'nothing counted yet');
+  if(ui.cond && b.offal[ui.cond]){
+    var t = 0, k;
+    for(k in b.offal[ui.cond]) if(b.offal[ui.cond].hasOwnProperty(k)) t += n0(b.offal[ui.cond][k]);
+    el = document.getElementById('tot-cond');
+    if(el) el.innerHTML = measure(condCounted(b,ui.cond), t, 'organs', 'nothing counted yet');
+  }
+}
+
+function onInput(e){
+  var t = e.target, r = getReturn(ui.rid), b;
+  if(t.id==='insp'){ db.inspector = t.value; save(); return; }
+  if(!r) return;
+  if(t.id==='nosr'){ r.noSlaughterReason = t.value; touch(r); return; }
+  if(t.id==='rnotes'){ r.notes = t.value; touch(r); return; }
+  if(t.id==='per'){ r.period = t.value; touch(r); return; }
+  if(t.id==='q'){
+    ui.q = t.value;
+    var lst = document.getElementById('picklist');
+    if(lst) lst.innerHTML = pickList();
+    return;
+  }
+  if(!ui.sp || !r.data[ui.sp]) return;
+  b = r.data[ui.sp];
+  if(t.id==='sl'){ b.slaughtered = t.value; touch(r); return; }
+  if(t.id==='cp'){ b.condPassed = t.value; touch(r); return; }
+  var a;
+  if((a = t.getAttribute('data-wc')) && b.wc[a]){
+    b.wc[a].v = t.value; touch(r); refreshTotals(); return; }
+  if((a = t.getAttribute('data-wcnote')) && b.wc[a]){ b.wc[a].note = t.value; touch(r); return; }
+  if((a = t.getAttribute('data-pc')) && b.pc.hasOwnProperty(a)){
+    b.pc[a] = t.value; touch(r); refreshTotals(); return; }
+  /* A field cleared to empty means "not counted" and the key goes away. Anything
+     else -- including text that is not a number -- is kept exactly as typed so
+     validate() can object to it. Nothing is silently dropped or corrected. */
+  if((a = t.getAttribute('data-lair'))){
+    if(t.value==='') delete b.lair[a]; else b.lair[a] = t.value;
+    touch(r); return;
+  }
+  if((a = t.getAttribute('data-org')) && ui.cond && b.offal[ui.cond]){
+    if(t.value==='') delete b.offal[ui.cond][a]; else b.offal[ui.cond][a] = t.value;
+    touch(r); refreshTotals(); return;
+  }
+}
+
+function onChange(e){
+  var t = e.target, r = getReturn(ui.rid);
+  if(!r) return;
+  /* Changing the abattoir on a return that already carries figures would send one
+     plant's condemnations out under another plant's name -- a complete, plausible,
+     wrong return. Ask, and put the selector back if the answer is no. */
+  if(t.id==='org'){
+    var newOrg = t.value ? parseInt(t.value,10) : null;
+    if(newOrg !== r.org && r.org !== null && anyFiguresHeld(r) &&
+       !window.confirm('This return already has figures captured for ' + abaName(r.org) +
+         '. Moving it to ' + (abaName(newOrg) || 'no abattoir') +
+         ' will send those figures under the new name.\n\nMove them?')){
+      t.value = (r.org===null ? '' : String(r.org));
+      return;
+    }
+    r.org = newOrg; touch(r); render(); return;
+  }
+  if(t.id==='nos'){ r.noSlaughter = !!t.checked; touch(r); render(); return; }
+  /* Older mobile Safari fires only `change` for a month picker, never `input`.
+     Handled in both, or the return quietly keeps the default month. */
+  if(t.id==='per'){ r.period = t.value; touch(r); return; }
+}
+
+function onClick(e){
+  var t = e.target, a;
+  while(t && t !== app && !hasAction(t)) t = t.parentNode;
+  if(!t || t===app) return;
+  /* Read the species block only where it exists. Calling spBlock() here would seed
+     an empty block for whatever species was last open, into whatever return is open
+     now -- a pig abattoir quietly growing a Cattle block on the first tap. */
+  var r = getReturn(ui.rid);
+  var b = (r && ui.sp && r.data[ui.sp]) ? r.data[ui.sp] : null;
+
+  if((a = t.getAttribute('data-go'))){ go(a); return; }
+  if(t.getAttribute('data-new')){
+    var nr = newReturn(); db.returns.push(nr); save();
+    ui.rid = nr.id; ui.sp = null; ui.cond = null; ui.pane = null; go('ret'); return;
+  }
+  if((a = t.getAttribute('data-open'))){
+    ui.rid = a; ui.sp = null; ui.cond = null; ui.pane = null; go('ret'); return;
+  }
+  if((a = t.getAttribute('data-del'))){
+    var dr = getReturn(a);
+    var msg = (dr && dr.status==='sent')
+      ? 'Delete this return? You marked it as sent, but the copy on this phone will be gone.'
+      : 'Delete this return? It has not been sent anywhere else.';
+    if(window.confirm(msg)){
+      for(var i=0;i<db.returns.length;i++) if(db.returns[i].id===a){ db.returns.splice(i,1); break; }
+      save(); ui.rid = null; ui.sp = null; ui.cond = null; go('home');
+    }
+    return;
+  }
+  if((a = t.getAttribute('data-sp'))){
+    var ix = r.species.indexOf(a);
+    if(ix>=0){
+      if(blockUsed(r.data[a]) && !window.confirm('Remove ' + a +
+          '? The figures already captured for it stay on the phone but will not be sent.'))
+        return;
+      r.species.splice(ix,1);
+      if(ui.sp===a){ ui.sp = null; ui.cond = null; }
+    } else {
+      r.species.push(a); spBlock(r, a);
+    }
+    touch(r); render(); return;
+  }
+  if((a = t.getAttribute('data-sp-open'))){ ui.sp = a; ui.cond = null; spBlock(r, a); go('sp'); return; }
+  if((a = t.getAttribute('data-pick'))){ ui.pane = a; go('pick'); return; }
+  if((a = t.getAttribute('data-add'))){
+    if(!b) return;
+    if(ui.pane==='wc'){ if(!b.wc[a]) b.wc[a] = { v:'', note:'' }; touch(r); go('sp'); }
+    else if(ui.pane==='pc'){ if(!b.pc.hasOwnProperty(a)) b.pc[a] = ''; touch(r); go('sp'); }
+    else { if(!b.offal[a]) b.offal[a] = {}; touch(r); ui.cond = a; go('offal'); }
+    return;
+  }
+  /* The x sits next to the number field on a small screen. Confirm whenever there
+     is something to lose -- a typed figure, or a controlled-disease note. */
+  if((a = t.getAttribute('data-rm-wc'))){
+    if(!b || !b.wc[a]) return;
+    if((strictNum(b.wc[a].v)!==null || b.wc[a].note) &&
+       !window.confirm('Remove ' + a + '? The figure you typed for it will be gone.')) return;
+    delete b.wc[a]; touch(r); render(); return;
+  }
+  if((a = t.getAttribute('data-rm-pc'))){
+    if(!b || !b.pc.hasOwnProperty(a)) return;
+    if(strictNum(b.pc[a])!==null &&
+       !window.confirm('Remove ' + a + '? The kilograms you typed for it will be gone.')) return;
+    delete b.pc[a]; touch(r); render(); return;
+  }
+  if((a = t.getAttribute('data-offal'))){ ui.cond = a; go('offal'); return; }
+  if((a = t.getAttribute('data-rm-offal'))){
+    if(!b) return;
+    if(window.confirm('Remove ' + a + ' and every organ count under it?')){
+      delete b.offal[a]; ui.cond = null; touch(r); go('sp');
+    }
+    return;
+  }
+  if(t.getAttribute('data-export')){ go('export'); return; }
+  if((a = t.getAttribute('data-copy'))){ copyBox(a, t); return; }
+  if(t.getAttribute('data-sent')){
+    /* Freeze the name it went out under. Editing the home-screen name afterwards
+       must not rewrite who signed a return that has already been sent. */
+    touch(r);
+    r.inspector = inspectorOf(r);
+    r.status = 'sent';
+    save();
+    ui.rid = null; ui.sp = null; ui.cond = null; go('home'); return;
+  }
+}
+function hasAction(el){
+  if(!el || !el.getAttribute) return false;
+  var k = ['data-go','data-new','data-open','data-del','data-sp','data-sp-open','data-pick',
+           'data-add','data-rm-wc','data-rm-pc','data-offal','data-rm-offal','data-export',
+           'data-copy','data-sent'];
+  for(var i=0;i<k.length;i++) if(el.getAttribute(k[i])) return true;
+  return false;
+}
+function copyBox(id, btn){
+  var box = document.getElementById(id);
+  if(!box) return;
+  box.removeAttribute('readonly');
+  box.focus(); box.setSelectionRange(0, box.value.length);
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+  box.setAttribute('readonly','readonly');
+  btn.textContent = ok ? 'Copied — now paste it into WhatsApp or e-mail'
+                       : 'Could not copy — press and hold the box, then Select All';
+}
+
+/* ---------- boot ---------- */
+
+function init(){
+  app = document.getElementById('app');
+  db = load();
+  ui = { view:'home', rid:null, sp:null, pane:null, cond:null, q:'' };
+  app.addEventListener('input', onInput, false);
+  app.addEventListener('change', onChange, false);
+  app.addEventListener('click', onClick, false);
+  try { window.history.replaceState({ v:'home' }, ''); histOn = true; }
+  catch(e){ histOn = false; }
+  if(window.addEventListener) window.addEventListener('popstate', onPop, false);
+  render();
+}
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded', init, false);
+else init();
+
+})();
+</script>
+</body>
+</html>
