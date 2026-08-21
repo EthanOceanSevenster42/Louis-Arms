@@ -191,16 +191,26 @@ South African ID numbers; 360 abattoir owner names and 586 telephone numbers; an
 per-plant condemnation figures — the same figures this system's entire access-control layer exists
 to keep one abattoir from seeing about another.
 
-Transfer them out of band: `3 - The database` in the handover, onto the server over SFTP or into a
-private blob container with a short-lived SAS. Check them after transfer —
+Ask Louis for **`ARMS-database-for-the-server.zip`** (6,4 MB compressed, 38,2 MB restored). It holds
+the three backups and its own read-me. Transfer it out of band — SFTP, or a private blob container
+with a short-lived SAS. Not by e-mail, and not into this repository.
+
+Verify what you receive before restoring it:
 
 ```powershell
 Get-FileHash Schedule8Data.bak -Algorithm SHA256
 ```
 
-— and confirm the counts the restore script prints: **10 875 returns · 147 611 items · 181 856
-organ rows · 10 356 approved · 2015-12 to 2026-07**. If those do not match, you have the wrong
-backup or a truncated transfer.
+| File | Bytes | SHA-256 |
+|---|---|---|
+| `NAHDIS_FSA.bak` | 5 486 080 | `0BC700A117429DB22711379313F36851C30DA96881C4FCD9DE37B596BE319912` |
+| `Schedule8.bak` | 4 363 776 | `17361038BCC0CC35C0699EB059E4B721BF8D31ADAE1D84C70FD585E10DB7D58A` |
+| `Schedule8Data.bak` | 30 203 392 | `C5CCE4E7A7C6294DBCC6B18BC40F5DD39909F4CDD4D67824873308542D7ED920` |
+
+Then confirm the counts the restore script prints: **10 875 returns · 147 611 items · 181 856 organ
+rows · 10 356 approved · 2015-12 to 2026-07**. If those do not match, you have the wrong backup or a
+truncated transfer — stop and get a clean copy rather than going live with part of a national
+animal-health record.
 
 Note this is the **pre-2022-cut archive** — it still holds the rows removed from Louis's working
 copy on 17 Aug 2026. That is harmless and probably what you want: ARMS reads from 2022 by
