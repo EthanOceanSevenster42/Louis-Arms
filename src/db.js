@@ -43,6 +43,17 @@ function buildPoolConfig() {
      * means a semicolon that reaches the text can never start a second one. */
     multipleStatements: false,
 
+    /* Pin the connection collation to the one the tables were created with.
+     *
+     * MySQL 8 defaults a connection to utf8mb4_0900_ai_ci. The migrated tables
+     * are utf8mb4_unicode_ci. Mix the two in one expression - NULLIF(x,''),
+     * a JOIN on two text columns, GetProvince() beside a literal - and MySQL
+     * refuses with "Illegal mix of collations" rather than choosing for you.
+     * This is the same class of failure the SQL Server original hit between the
+     * restored databases and master, and it is fixed the same way: say which
+     * collation you mean instead of inheriting one. */
+    charset: 'utf8mb4_unicode_ci',
+
     ssl: s.encrypt
       ? { rejectUnauthorized: !s.trustServerCertificate }
       : undefined,
