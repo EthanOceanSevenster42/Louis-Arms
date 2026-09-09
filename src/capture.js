@@ -157,7 +157,18 @@ function returnCols(alias = '') {
 const RETURN_COLS = returnCols();
 
 export async function getReturn(frmdId) {
-  const rows = await sql`SELECT ${raw(RETURN_COLS)} FROM FormData WHERE FRMD_Id = ${Number(frmdId)}`;
+  /* /returns/notanumber put Number('notanumber') - NaN - into the query, and a
+   * NaN reaches MySQL as the bare word NaN, which it reads as a column name:
+   * "Unknown column 'NaN' in 'where clause'". That is a 500 where the honest
+   * answer is 404. Nothing hostile ever got through - Number() admits only a
+   * number or NaN - but an id that is not a whole positive number is not an
+   * id, and saying so here answers for every caller at once: the page route,
+   * and approve, send-back and revise, which all load through this and already
+   * treat a missing return properly. */
+  const id = Number(frmdId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+
+  const rows = await sql`SELECT ${raw(RETURN_COLS)} FROM FormData WHERE FRMD_Id = ${id}`;
   return rows.length ? shapeReturn(rows[0]) : null;
 }
 

@@ -131,6 +131,11 @@ adminRoutes.post('/admin/users', wrap(async (req, res) => {
 
 adminRoutes.post('/admin/users/:id/active', wrap(async (req, res) => {
   const id = Number(req.params.id);
+  /* The reset route below gets this for free: it loads through findById, which
+   * folds a NaN to 0 and finds nobody. This one goes straight to the UPDATE,
+   * where a NaN would reach MySQL as a column name and raise a 500 instead of
+   * saying there is no such account. Answer the same way reset does. */
+  if (!Number.isInteger(id) || id <= 0) return res.redirect('/admin/users?error=No+such+account.');
   if (id === req.user.userId) return res.redirect('/admin/users?error=You+cannot+disable+your+own+account.');
 
   const active = req.body.active === '1';

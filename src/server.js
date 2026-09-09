@@ -256,7 +256,26 @@ app.get('/download/explorer', (req, res, next) => {
   if (req.user.role === 'user') {
     return res.status(403).send('The offline copy holds every abattoir\'s figures, so it is not available at your access level.');
   }
-  if (!fs.existsSync(config.paths.explorerBuilt)) return next(new Error(`Not on this machine: ${config.paths.explorerBuilt}`));
+  /* The built 2,4 MB explorer is a handover artefact, not something this
+   * repository carries or this server produces. It is the file as it stood,
+   * with eleven years of figures compiled into it, and rendering a fresh copy
+   * to stand in its place would be a different document wearing its name - the
+   * offline artefact is supposed to be the frozen one.
+   *
+   * So when it has not been deployed, say that. Passing the absence to the
+   * error handler raised a 500, which reads as a broken server rather than a
+   * file nobody copied up, and check.js already promises this route "will say
+   * so". The explorer itself is unaffected - it is built from the template on
+   * every request and never needed this file. */
+  if (!fs.existsSync(config.paths.explorerBuilt)) {
+    return res.status(404).type('text/plain').send(
+      'The offline copy of the NAHDIS Explorer is not on this server.\n\n'
+      + 'It is a handover artefact rather than part of the application, so it is put in\n'
+      + 'place separately: copy it across and point EXPLORER_BUILT in .env at it.\n\n'
+      + 'Nothing else is affected. The explorer is live at /explorer, built from the\n'
+      + 'database on every request, and the phone app still downloads from /download/mobile.'
+    );
+  }
   res.download(config.paths.explorerBuilt, 'NAHDIS Explorer.html');
 });
 
