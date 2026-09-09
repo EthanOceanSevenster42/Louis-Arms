@@ -103,14 +103,38 @@ async function abattoirs() {
    * GROUP_CONCAT truncates at group_concat_max_len (1024 by default) - a
    * species list is a handful of short words, so it is nowhere near that, but
    * a silent truncation is the sort of thing worth naming rather than meeting
-   * later. */
+   * later.
+   *
+   * THE SPECIES LIST IS JOINED HERE RATHER THAN READ FROM vw_AbattoirSpecies.
+   *
+   * The migration created that view owned by its own one-off account,
+   * `arms_migrate`@`127.0.0.1`, and left it SQL SECURITY DEFINER. That account
+   * is gone, so MySQL evaluates the view as a user that cannot be
+   * authenticated and refuses with
+   *
+   *     Access denied for user 'arms_app'@'127.0.0.1' (using password: YES)
+   *
+   * - error 1045, the same text a wrong password in .env produces. It sent us
+   * to the settings, which were correct, while the actual fault was one legacy
+   * object with a dead owner. It took out every page that builds the form
+   * definition: the whole capture path, user administration and the phone app,
+   * while the explorer carried on reading perfectly.
+   *
+   * The view was three joined base tables and nothing more, and this login
+   * reads all three directly, so the join is stated here instead. One less
+   * migrated object to be silently owned by somebody who no longer exists.
+   * Keyed on ORG_ID through AbattoirMaster exactly as the view was, so the
+   * value is unchanged - including that a species reachable twice is listed
+   * twice, which is what the view did too. */
   const rows = await query(`
 SELECT o.ORG_ID,
        o.ORG_Name,
        TRIM(IFNULL(a.ABA_RegistrationNumber,'')) AS RC,
-       (SELECT GROUP_CONCAT(v.SPC_Name ORDER BY v.SPC_Name SEPARATOR ',')
-          FROM ${D.registry('vw_AbattoirSpecies')} v
-         WHERE v.ORG_ID = o.ORG_ID) AS Species
+       (SELECT GROUP_CONCAT(s.SPC_Name ORDER BY s.SPC_Name SEPARATOR ',')
+          FROM ${D.registry('AbattoirMaster')} am
+          JOIN ${D.registry('OrganisationSpecies')} l ON l.ABA_Id = am.ABA_ID
+          JOIN ${D.registry('Species')} s ON s.SPC_ID = l.SPC_Id
+         WHERE am.ORG_ID = o.ORG_ID) AS Species
 FROM ${D.registry('Organisation')} o
 JOIN ${D.registry('AbattoirMaster')} a ON a.ORG_ID = o.ORG_ID
 WHERE o.ORG_Active = 1
