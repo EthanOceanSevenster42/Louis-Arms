@@ -126,6 +126,7 @@ export function page({ title, body, user = null, active = '', wide = true }) {
 <html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#123a2c">
+<link rel="icon" type="image/svg+xml" href="/favicon.ico">
 <title>${esc(title)} · ARMS</title>
 <style>${CSS}</style></head><body>
 ${user ? header(user, active) : ''}
@@ -141,6 +142,7 @@ export function plainPage({ title, body }) {
 <html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#123a2c">
+<link rel="icon" type="image/svg+xml" href="/favicon.ico">
 <title>${esc(title)} · ARMS</title>
 <style>${CSS}</style></head><body>
 <div class="brand">

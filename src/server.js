@@ -51,6 +51,21 @@ app.use(csrf);
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
+/* Browsers ask for /favicon.ico without being told to, on every page including
+ * the sign-in page, and with nothing here that was a 404 in the console of an
+ * otherwise clean application - the sort of noise that trains people to ignore
+ * the console. It is answered before the authentication gate because the
+ * request arrives before anyone has signed in, and it carries no figures. */
+const FAVICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+  + '<rect width="32" height="32" rx="7" fill="#123a2c"/>'
+  + '<path d="M16 7 L23.5 25 H19.6 L18.2 21.2 H13.8 L12.4 25 H8.5 Z '
+  + 'M16 12.4 L14.6 18 H17.4 Z" fill="#ffffff"/></svg>';
+
+app.get('/favicon.ico', (req, res) => {
+  res.type('image/svg+xml').set('Cache-Control', 'public, max-age=604800').send(FAVICON);
+});
+
 /* Health is the one route that answers without a session - it is what you
  * check when nothing else works, and it exposes no figures. */
 app.get('/api/health', wrap(async (req, res) => {

@@ -295,12 +295,27 @@ ORDER BY p.DIP_ID`;
  * Writing
  * ------------------------------------------------------------------------- */
 
-async function orgName(orgId) {
-  const rows = await sql`SELECT ORG_Name FROM ${raw(D.registry('Organisation'))} WHERE ORG_ID = ${Number(orgId)}`;
-  if (!rows.length) throw new Error(`abattoir ${orgId} is not on the register`);
+/* The name the register carries for an abattoir, or null when it carries none.
+ *
+ * The capture desk asks this before it opens and orgName() below asks it again
+ * before a save, so the two cannot disagree: a desk opens exactly when the
+ * return captured on it could be written. Asking the register rather than the
+ * reporting list matters - the reporting list is the 18-month window, and an
+ * abattoir on the register that has simply not filed lately is still a real
+ * abattoir somebody may need to file for. */
+export async function registeredOrgName(orgId) {
+  const id = Number(orgId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const rows = await sql`SELECT ORG_Name FROM ${raw(D.registry('Organisation'))} WHERE ORG_ID = ${id}`;
   /* ORG_Name on FormData is varchar(50); the register's is the same width, so
    * this cannot truncate - but say so rather than assume it. */
-  return String(rows[0].ORG_Name).slice(0, 50);
+  return rows.length ? String(rows[0].ORG_Name).slice(0, 50) : null;
+}
+
+async function orgName(orgId) {
+  const name = await registeredOrgName(orgId);
+  if (name === null) throw new Error(`abattoir ${orgId} is not on the register`);
+  return name;
 }
 
 /* Write the items of a return. Always called inside a transaction, always

@@ -18,6 +18,7 @@ import { audit, ACTIONS } from '../audit.js';
 import {
   STATUS, loadFormIndex, listReturns, missingReturns, findReturn, getReturn,
   getReturnItems, returnHistory, saveDraft, approveReturn, sendBack, reviseReturn,
+  registeredOrgName,
 } from '../capture.js';
 import { validateReturn, PERIOD_RE, periodStart, periodEnd } from '../validate-return.js';
 import { getFormDefinition } from '../form-definition.js';
@@ -220,6 +221,14 @@ captureRoutes.get('/returns/open', requireAuth, wrap(async (req, res) => {
   if (!await mayReachOrg(req.user, orgId)) {
     return res.redirect('/returns/new?error=' + encodeURIComponent('That abattoir is outside your scope.'));
   }
+  /* A super user's scope is the whole country, so mayReachOrg() waves through
+   * an ORG_ID the register has never carried - and the desk then opened under
+   * the heading "Abattoir 999999" for an abattoir that does not exist. Nothing
+   * could be saved from it, because the write checks the register, but a form
+   * that cannot lead anywhere should not open in the first place. */
+  if (!await registeredOrgName(orgId)) {
+    return res.redirect('/returns/new?error=' + encodeURIComponent('That abattoir is not on the register.'));
+  }
 
   const existing = await findReturn(orgId, period);
   if (existing) return res.redirect(`/returns/${existing.frmdId}`);
@@ -419,10 +428,21 @@ captureRoutes.get('/returns/draft', requireAuth, wrap(async (req, res) => {
   const period = String(req.query.period || '');
   if (!PERIOD_RE.test(period) || !await mayReachOrg(req.user, orgId)) return res.redirect('/returns/new');
 
+  /* Deep-linkable, so it repeats the register check /returns/open makes rather
+   * than trusting that it was reached through it. */
+  const registered = await registeredOrgName(orgId);
+  if (!registered) {
+    return res.redirect('/returns/new?error=' + encodeURIComponent('That abattoir is not on the register.'));
+  }
+
   const def = await getFormDefinition();
   const found = def.abattoirs.find(([id]) => Number(id) === orgId);
+  /* The reporting list's name is preferred because it is the one shown
+   * everywhere else; the register's is the fallback, for an abattoir that is
+   * on the register but outside the 18-month reporting window. `Abattoir
+   * ${orgId}` is no longer among the possibilities - by here it is a real one. */
   await renderDesk(req, res, {
-    ret: null, orgId, period, orgName: found ? found[1] : `Abattoir ${orgId}`, blocks: {},
+    ret: null, orgId, period, orgName: found ? found[1] : registered, blocks: {},
   });
 }));
 
