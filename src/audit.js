@@ -26,6 +26,8 @@ export const ACTIONS = {
   RETURN_APPROVED: 'return-approved',
   RETURN_RETURNED: 'return-sent-back',
   RETURN_REVISED: 'return-revised',
+  QUESTION_ASKED: 'question-asked',
+  QUESTION_ANSWERED: 'question-answered',
 };
 
 export async function audit({

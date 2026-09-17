@@ -75,6 +75,9 @@ const BAR_CSS = `
 #arms-bar a.arms-btn{background:#4fbf8b;color:#06251a;font-weight:700;border-radius:6px;
   padding:5px 11px;font-size:12.5px}
 #arms-bar a.arms-btn:hover{background:#6fd3a3;color:#06251a;text-decoration:none}
+#arms-bar a.arms-btn2{background:transparent;border:1.5px solid #4fbf8b;color:#eafff3;
+  font-weight:700;border-radius:6px;padding:3.5px 10px;font-size:12.5px}
+#arms-bar a.arms-btn2:hover{background:rgba(79,191,139,.18);color:#fff;text-decoration:none}
 #arms-bar a.arms-back{background:rgba(255,255,255,.13);border-radius:6px;padding:5px 11px;
   font-size:12.5px;color:#fff;font-weight:600}
 #arms-bar a.arms-back:hover{background:rgba(255,255,255,.24);color:#fff;text-decoration:none}
@@ -107,20 +110,28 @@ const BAR_CSS = `
  *   primary  { href, label } - the one green button. The explorer's is
  *            Schedule 8 Mobile.
  */
+function extAttrs(l) {
+  return l.external ? ' target="_blank" rel="noopener noreferrer"' : '';
+}
+
 function armsBar(chrome) {
   if (!chrome || !chrome.user) return '';
-  const { user, links = [], primary = null, back = null, scopeNote = '' } = chrome;
+  const { user, links = [], primary = null, secondary = [], back = null, scopeNote = '' } = chrome;
 
   const nav = links.map((l) =>
-    `<a href="${esc(l.href)}">${esc(l.label)}${
+    `<a href="${esc(l.href)}"${extAttrs(l)}>${esc(l.label)}${
       l.count ? `<span class="arms-badge">${esc(l.count)}</span>` : ''}</a>`).join('');
+
+  const sec = secondary.map((l) =>
+    `<a class="arms-btn2" href="${esc(l.href)}"${extAttrs(l)}>${esc(l.label)}</a>`).join('');
 
   return `<div id="arms-bar">
   ${back ? `<a class="arms-back" href="${esc(back.href)}">&#8592; ${esc(back.label)}</a>` : ''}
   <span class="arms-who"><b>${esc(user.fullName)}</b><span>${esc(user.scopeLabel)}</span></span>
   <span class="arms-nav">
     ${nav}
-    ${primary ? `<a class="arms-btn" href="${esc(primary.href)}">${esc(primary.label)}</a>` : ''}
+    ${sec}
+    ${primary ? `<a class="arms-btn" href="${esc(primary.href)}"${extAttrs(primary)}>${esc(primary.label)}</a>` : ''}
     <a class="arms-signout" href="/logout">Sign out</a>
   </span>
 </div>${scopeNote ? `<div id="arms-scope">${esc(scopeNote)}</div>` : ''}`;
@@ -182,7 +193,7 @@ function es5Block(def) {
 
   return `/* ---------- form definition ----------
    Read live from the Schedule8 form-definition database (Forms/Groups/Items/Parts)
-   and the NAHDIS_FSA register. ${formLine}.
+   and the registry database. ${formLine}.
    Served ${def.source.generatedAt} from ${def.source.server}.
    Nothing below is typed by hand; edit the database, not this block.
 
@@ -196,7 +207,7 @@ var ORGANS = ${safeJson(def.organs)};
 
 /* CONDEMNATION STATISTICS -- whole carcasses, counted in HEAD.
    g  = what the inspector reads on the phone
-   db = the sub-group string as it is stored in the NAHDIS Groups table.
+   db = the sub-group string as it is stored in the Groups table.
    Both now come from the same row, so they cannot drift apart. */
 var WC = [
 ${wc}
@@ -216,6 +227,60 @@ var ABATTOIRS = ${safeJson(def.abattoirs)};
 
 `;
 }
+
+/* Signed in on a desktop browser, the phone app is still a phone app - a
+ * capture form built for a 400px screen, stretched across a monitor, reads
+ * like nothing else on the site. Above 700px the whole thing is dropped into
+ * a phone-shaped frame instead: fixed width, centred, with a bezel. The frame
+ * only exists in this media query, so a real phone (which never matches it)
+ * gets exactly the untouched full-bleed layout it always had.
+ *
+ * `transform` on the shell is not decoration - it gives the shell a
+ * containing block of its own, so the app's own `.bar{position:fixed;
+ * bottom:0}` action bar pins to the BOTTOM OF THE FRAME rather than the real
+ * browser window. Without it the frame would be cosmetic and the app's fixed
+ * elements would ignore it completely. */
+const PHONE_FRAME_CSS = `
+@media (min-width:700px){
+  html,body.arms-phone-mode{background:#1b2420;min-height:100%}
+  body.arms-phone-mode{display:flex;align-items:center;justify-content:center;
+    padding:28px 12px;box-sizing:border-box}
+  /* The bezel's top padding is taller than the sides so the notch below has
+     somewhere to sit that is NOT the screen area - a notch positioned inside
+     an equal 14px padding is taller than the padding itself and dips into the
+     app's own content, which is exactly the bug this comment is here to stop
+     someone reintroducing. */
+  #arms-phone-shell{width:412px;max-width:100%;height:860px;max-height:calc(100vh - 56px);
+    background:#0a0a0a;border-radius:44px;padding:34px 14px 14px;box-sizing:border-box;
+    box-shadow:0 30px 70px rgba(0,0,0,.55);position:relative}
+  #arms-phone-shell::before{content:'';position:absolute;top:10px;left:50%;
+    transform:translateX(-50%);width:120px;height:18px;background:#0a0a0a;
+    border-radius:9px;z-index:40}
+  #arms-phone-screen{width:100%;height:100%;background:#eef1ee;border-radius:26px;
+    overflow-y:auto;overflow-x:hidden;position:relative;box-sizing:border-box;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scrollbar-color:rgba(18,58,44,.35) transparent}
+  #arms-phone-screen::-webkit-scrollbar{width:7px}
+  #arms-phone-screen::-webkit-scrollbar-track{background:transparent}
+  #arms-phone-screen::-webkit-scrollbar-thumb{background:rgba(18,58,44,.35);border-radius:4px}
+  #arms-phone-screen::-webkit-scrollbar-thumb:hover{background:rgba(18,58,44,.55)}
+  /* The app's own bottom action bar (".bar") is position:fixed, meant for a
+     real phone where body is the only thing that ever scrolls. Trapping a
+     fixed element inside this nested, transformed screen box (so it would
+     clip to the rounded corners instead of the square bezel) turned out to
+     be exactly the kind of fixed+transform combination that some browsers
+     repaint incorrectly on a full DOM replacement - which this app does on
+     every interaction - producing the bar rendering mid-content instead of
+     pinned to the bottom.
+     ".bar" is always the LAST element of every screen (checked against every
+     occurrence of h += '<div class="bar">' in Schedule 8 Mobile.html), so
+     sticky is not a compromise
+     here: with nothing after it to reveal, a sticky bottom bar behaves
+     exactly like the fixed one was meant to, without a transformed ancestor,
+     without clipping tricks, and without the repaint bug. */
+  #arms-phone-screen .bar{position:sticky !important}
+}
+`;
 
 export async function renderMobile(appPath, def, chrome = null) {
   const html = await fs.readFile(appPath, 'utf8');
@@ -240,11 +305,16 @@ export async function renderMobile(appPath, def, chrome = null) {
     if (!out.includes('<div id="app"></div>')) {
       throw new Error(`${appPath} has no <div id="app"></div> to put the signed-in bar above.`);
     }
+    if (!out.includes('<body>')) {
+      throw new Error(`${appPath} has no plain <body> to wrap in the phone frame.`);
+    }
     out = out
-      .replace('</head>', `<style>${BAR_CSS}</style>
+      .replace('</head>', `<style>${BAR_CSS}${PHONE_FRAME_CSS}</style>
 </head>`)
       .replace('<div id="app"></div>', `${armsBar(chrome)}
-<div id="app"></div>`);
+<div id="app"></div>`)
+      .replace('<body>', '<body class="arms-phone-mode">\n<div id="arms-phone-shell"><div id="arms-phone-screen">')
+      .replace('</body>', '</div></div>\n</body>');
   }
 
   return out;

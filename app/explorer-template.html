@@ -4,28 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#123a2c">
-<title>ARMS Animal Health</title>
+<title>Abattoir Reporting and Monitoring System</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
      background:#eef1ee;color:#16211c}
 h1,h2,h3{margin:0;font-weight:700}
-.top{position:sticky;top:0;z-index:30;background:#123a2c;color:#fff;padding:12px 16px}
-.top h1{font-size:18px;line-height:1.2;letter-spacing:.01em}
+.top{background:#123a2c;color:#fff;padding:12px 16px}
+.top h1{font-size:16px;line-height:1.3;letter-spacing:.01em}
 .top .sub{display:block;font-size:11.5px;font-weight:400;opacity:.78;margin-top:3px}
+@media (max-width:640px){.top h1{font-size:14px}}
+/* .top is NOT sticky: its height grows with the meta line (period range, counts)
+   and can wrap to two lines, so it has no fixed height to stack the bars below
+   it against. .tabs sticks at top:0 instead (its buttons never wrap, so its
+   height is constant), and .filters is offset by that constant height -- without
+   an offset a second sticky bar at top:0 just sits on top of the first one. */
 .tabs{display:flex;gap:2px;overflow-x:auto;background:#0d2c21;padding:0 8px;position:sticky;top:0;z-index:29}
 .tabs button{flex:none;background:none;border:0;color:#a8c4b7;font:inherit;font-size:13.5px;
      padding:11px 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
 .tabs button.on{color:#fff;font-weight:700;border-bottom-color:#4fbf8b}
 .filters{background:#fff;border-bottom:1px solid #dde4e0;padding:10px 16px;
-     display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;position:sticky;top:0;z-index:28}
+     display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;position:sticky;top:42px;z-index:28}
 .filters .f{display:flex;flex-direction:column;gap:3px}
 .filters label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b63;font-weight:700}
 select,input{font:inherit;padding:7px 9px;border:1px solid #c8d2cc;border-radius:7px;background:#fff;color:inherit}
 select{max-width:230px}
 button.lnk{background:none;border:0;color:#1d6b4f;font:inherit;cursor:pointer;text-decoration:underline;padding:0}
-.wrap{padding:16px;max-width:1100px;margin:0 auto}
+.wrap{padding:16px 24px}
 .card{background:#fff;border-radius:12px;padding:16px;margin:0 0 14px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .card h2{font-size:16px}
 .card h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5b6b63;margin-bottom:10px}
@@ -60,7 +66,7 @@ tbody tr:hover{background:#f6f9f7}
 .q small{display:block;color:#5b6b63;font-size:12px;margin-top:3px}
 .empty{text-align:center;color:#5b6b63;padding:34px 16px}
 svg{display:block;max-width:100%}
-.foot{padding:6px 16px 40px;font-size:11.5px;color:#7b8a82;max-width:1100px;margin:0 auto;line-height:1.6}
+.foot{padding:6px 24px 40px;font-size:11.5px;color:#7b8a82;line-height:1.6}
 .expbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
 .expbar button{background:#fff;border:1.5px solid #1d6b4f;color:#1d6b4f;font:inherit;font-size:13.5px;
      font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer}
@@ -121,6 +127,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 
 var D = DATA;
 var app, ui;
+var myQuestions = null, myQuestionsBusy = false, askStatus = '';
 var RLS = 'arms-saved-reports-v1';
 var MON = ['January','February','March','April','May','June','July','August','September',
            'October','November','December'];
@@ -149,7 +156,7 @@ function perYear(i){ return per(i).slice(0,4); }
 
 /* ---------- the register ----------
    Every registered abattoir in the country is in D.aba, not only the ones that
-   report: [name, province, throughput category, FSA flag, active, reports].
+   report: [name, province, throughput category, flag, active, reports].
    An abattoir that has never submitted must never be shown a zero -- it has not
    reported nil, it has not reported at all. */
 function abaName(a){ return D.aba[a][0]; }
@@ -178,7 +185,7 @@ function silentPanel(){
     '<br><br>It is on the national register — ' + esc(D.prov[abaProv(ui.aba)]) + ', ' +
     esc(D.tp[abaTp(ui.aba)]) + ' throughput, ' +
     (abaAct(ui.aba) ? 'active' : 'marked inactive') +
-    (abaAfs(ui.aba) ? ', flagged FSA' : '') +
+    (abaAfs(ui.aba) ? ', flagged' : '') +
     ' — and like every abattoir it owes a Schedule 8 to the ' +
     esc(D.prov[abaProv(ui.aba)]) + ' Provincial Executive Officer each month. It may be filing that ' +
     'paper; none of it is here.<br><br>So there is nothing to report, and a zero would be a lie: ' +
@@ -554,8 +561,8 @@ function tabLabel(t){
 }
 
 function chrome(){
-  var h = '<div class="top"><h1>ARMS' +
-    '<span class="sub">Animal Health &amp; Disease Information System · Schedule 8 returns, ' +
+  var h = '<div class="top"><h1>Abattoir Reporting and Monitoring System' +
+    '<span class="sub">ARMS · Schedule 8 returns, ' +
     perPretty(0) + ' to ' + perPretty(D.meta.periods.length-1) + ' · ' +
     fmt(D.meta.returns) + ' approved returns · ' + fmt(D.meta.registered) +
     ' abattoirs on the national register, ' + fmt(D.meta.reporting) +
@@ -778,7 +785,7 @@ function notifyBody(dis, provName, rows){
   L.push('Province:           ' + provName);
   L.push('Reporting period:   ' + (ui.p0===ui.p1 ? perPretty(ui.p0)
                                                  : perPretty(ui.p0) + ' to ' + perPretty(ui.p1)));
-  L.push('Reported by:        Food Safety Agency (Pty) Ltd — Independent Meat Inspection');
+  L.push('Reported by:        Independent Meat Inspection');
   L.push('');
   L.push('The following was recorded on the Schedule 8 return(s) for the abattoir(s) below.');
   L.push('');
@@ -1129,8 +1136,15 @@ function vCarc(){
   return h;
 }
 
+/* Excluded from the trim breakdown at Louis's request - not a valid trimmed
+   part for this report, even though historical returns recorded weight
+   against it. */
+var TRIM_EXCLUDED = 'Enteritis/Gastritis';
 function vTrim(){
-  var t = tally(D.pc, function(r){ return named(r[3]); }, null);
+  var t = tally(D.pc, function(r){
+    var n = named(r[3]);
+    return n === TRIM_EXCLUDED ? null : n;
+  }, null);
   var total = 0, k;
   for(k in t.by) if(t.by.hasOwnProperty(k)) total += t.by[k];
   var h = '<div class="card"><h3>Partially condemned — ' + esc(scopeLine()) + '</h3>' +
@@ -1155,7 +1169,7 @@ function vLair(){
   h += '<div class="h"><div class="n">' + (p===null?'–':fmt(p,3)+'%') + '</div>' +
        '<div class="u">of animals slaughtered</div></div></div>';
   h += '<div class="warnbox"><b>These are not condemnations.</b> An animal that arrived dead or died ' +
-       'in the pens never reached inspection. The old NAHDIS reports counted these in the disease ' +
+       'in the pens never reached inspection. The old paper-era reports counted these in the disease ' +
        'summary — dead on arrival, presented as a disease. They are kept apart here.</div></div>';
   h += '<div class="card"><h3>What happened</h3>' + barTable(sorted(t.by), 'animals', 0, true) + '</div>';
   h += '<div class="card"><h3>Lairage losses</h3>' + vbars(bucketTotals(D.lr, 4), 'animals lost', 0, '#a3311f') + '</div>';
@@ -1896,6 +1910,88 @@ var QUESTIONS = [
 function allScope(){ ui.prov=-1; ui.aba=-1; ui.spec=-1; ui.dis=-1; ui.p0=0; ui.p1=D.meta.periods.length-1; }
 function ixOf(arr, name){ for(var i=0;i<arr.length;i++) if(arr[i]===name) return i; return -1; }
 
+/* ---------- ask a question that is not in the list above ----------
+   Stored against the account and answered by a super user at /admin/questions.
+   arms_csrf is deliberately not HttpOnly (see auth/middleware.js) so it can be
+   read here and sent back as a header, the same double-submit check every
+   other write in this application goes through. */
+function getCookie(name){
+  var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : '';
+}
+function loadMyQuestions(){
+  myQuestionsBusy = true;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/questions/mine', true);
+  xhr.onload = function(){
+    myQuestionsBusy = false;
+    if(xhr.status===200){
+      try { myQuestions = JSON.parse(xhr.responseText).questions || []; } catch(err){ myQuestions = []; }
+    } else { myQuestions = []; }
+    render();
+  };
+  xhr.onerror = function(){ myQuestionsBusy = false; myQuestions = []; render(); };
+  xhr.send();
+}
+function submitQuestion(){
+  var box = el('askText');
+  if(!box) return;
+  var text = trimStr(box.value);
+  if(!text){ askStatus = 'warn:Type a question first.'; render(); return; }
+  askStatus = 'busy:Sending…';
+  render();
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/questions', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('X-CSRF-Token', getCookie('arms_csrf'));
+  xhr.onload = function(){
+    if(xhr.status===200){
+      askStatus = 'ok:Sent. A national administrator will answer it here.';
+      myQuestions = null;
+      loadMyQuestions();
+    } else {
+      var msg = 'Could not send that.';
+      try { msg = JSON.parse(xhr.responseText).error || msg; } catch(err){}
+      askStatus = 'warn:' + msg;
+      render();
+    }
+  };
+  xhr.onerror = function(){ askStatus = 'warn:Could not reach the server. Try again.'; render(); };
+  xhr.send(JSON.stringify({ text:text }));
+}
+function askBox(){
+  if(myQuestions===null && !myQuestionsBusy) loadMyQuestions();
+
+  var parts = askStatus ? askStatus.split(':') : null;
+  var kind = parts ? parts[0] : null;
+  var msg = parts ? parts.slice(1).join(':') : '';
+
+  var h = '<div class="card" style="margin-top:14px"><h3>Not answered above?</h3>' +
+    '<div class="tiny" style="margin-bottom:10px">Ask it here. It is stored against your account, ' +
+    'and a super user answers it — nobody has to be phoned or e-mailed.</div>' +
+    (kind==='ok'   ? '<div class="okbox">'   + esc(msg) + '</div>' : '') +
+    (kind==='warn' ? '<div class="warnbox">' + esc(msg) + '</div>' : '') +
+    '<textarea id="askText" placeholder="What would you like to know?" ' +
+    'style="width:100%;min-height:80px;font:inherit;font-size:14px;padding:10px;' +
+    'border:1px solid #c8d2cc;border-radius:9px;box-sizing:border-box"></textarea>' +
+    '<div class="expbar" style="margin-top:10px">' +
+    '<button class="pri" data-submitq="1"' + (kind==='busy' ? ' disabled' : '') + '>' +
+    (kind==='busy' ? 'Sending…' : 'Ask') + '</button></div></div>';
+
+  if(myQuestions && myQuestions.length){
+    h += '<div class="card"><h3>Your questions</h3>';
+    for(var i=0;i<myQuestions.length;i++){
+      var qq = myQuestions[i];
+      h += '<div class="q" style="cursor:default">' + esc(qq.text) +
+        (qq.status==='answered'
+          ? '<div class="okbox" style="margin-top:8px">' + esc(qq.answer) + '</div>'
+          : '<small>Waiting for an answer</small>') + '</div>';
+    }
+    h += '</div>';
+  }
+  return h;
+}
+
 function vAsk(){
   var h = '<div class="card"><h2>Ask it something</h2><div class="tiny" style="margin-top:6px">' +
     'These set the filters for you. After that, change anything in the bar above — every tab ' +
@@ -1916,6 +2012,7 @@ function vAsk(){
     'lairage in <b>animals lost</b>. A rate is shown only where the denominator covers the same ' +
     'abattoirs, species and months as the numerator; where it does not, the figure is withheld and ' +
     'the reason is printed.</div></div>';
+  h += askBox();
   return h;
 }
 
@@ -1943,7 +2040,7 @@ function render(){
     ' from ARMS · approved Schedule 8 returns only</div>';
   app.innerHTML = chrome() + '<div class="wrap">' + printhead +
     (needsExport(ui.tab) ? expBar() : '') + body + '</div>' +
-    '<div class="foot">Built ' + esc(D.meta.built) + ' from the restored NAHDIS databases. ' +
+    '<div class="foot">Built ' + esc(D.meta.built) + ' from the restored databases. ' +
     'The register is every abattoir in the country (' + fmt(D.meta.registered) + '); the figures ' +
     'come from the ' + fmt(D.meta.reporting) + ' that have submitted an approved return since ' +
     D.meta.fromYear + '. Approved returns only.</div>';
@@ -1963,7 +2060,7 @@ function onChange(e){
   if(t.id==='dis'){ ui.dis = parseInt(t.value,10); render(); return; }
 }
 
-var ACTIONS = ['data-tab','data-ask','data-reset','data-goaba','data-exp','data-open','data-del','data-delc'];
+var ACTIONS = ['data-tab','data-ask','data-reset','data-goaba','data-exp','data-open','data-del','data-delc','data-submitq'];
 function actionOf(node){
   var i;
   for(i=0;i<ACTIONS.length;i++) if(node.getAttribute && node.getAttribute(ACTIONS[i]) !== null)
@@ -1975,6 +2072,7 @@ function onClick(e){
   while(t && t !== app){ act = actionOf(t); if(act) break; t = t.parentNode; }
   if(!act) return;
   var kind = act[0], val = act[1];
+  if(kind==='data-submitq'){ submitQuestion(); return; }
   if(kind==='data-tab'){ ui.tab = val; render(); return; }
   if(kind==='data-ask'){ QUESTIONS[parseInt(val,10)].go(); render(); return; }
   if(kind==='data-reset'){ allScope(); render(); return; }

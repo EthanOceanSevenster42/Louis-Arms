@@ -36,6 +36,8 @@ import { captureRoutes } from './routes/capture-routes.js';
 import { adminRoutes } from './routes/admin-routes.js';
 import { STATUS, listReturns, countReturns, loadFormIndex } from './capture.js';
 import { page, esc, messages, statusPill } from './pages.js';
+import { audit, ACTIONS } from './audit.js';
+import { askQuestion, myQuestions, countOpenQuestions } from './questions.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -138,6 +140,10 @@ async function explorerChrome(user) {
     links.push({ href: '/admin/users', label: 'Users' }, { href: '/admin/audit', label: 'Audit' });
   }
   links.push({ href: '/home', label: 'Summary' }, { href: '/account/password', label: 'Password' });
+  if (user.role === 'super') {
+    const open = await countOpenQuestions();
+    links.push({ href: '/admin/questions', label: 'Questions', count: open || null });
+  }
 
   /* An inspector is looking at a page where most of the abattoirs have no
    * name. Say why, on the page, rather than leaving it to look like a fault. */
@@ -157,6 +163,12 @@ async function explorerChrome(user) {
      * back link inside a tab that was opened fresh just leaves two explorer
      * tabs behind. One tab, one trail. */
     primary: { href: '/mobile', label: 'Schedule 8 Mobile' },
+    /* A separate system entirely, so a new tab rather than the same-tab
+     * convention above - leaving this one behind should not cost the trail
+     * back through ARMS. */
+    secondary: [
+      { href: 'http://foodsafetyaudits.co.za/login', label: 'HAS System', external: true },
+    ],
     scopeNote,
   };
 }
@@ -166,7 +178,7 @@ async function explorerChrome(user) {
 function mobileChrome(user) {
   return {
     user: { fullName: user.fullName, scopeLabel: scopeLabel(user) },
-    back: { href: '/explorer', label: 'NAHDIS Explorer' },
+    back: { href: '/explorer', label: 'Abattoir Explorer' },
     links: [{ href: '/returns', label: 'Capture desk' }],
   };
 }
@@ -258,6 +270,26 @@ app.post('/api/returns', wrap(async (req, res) => {
   }
 }));
 
+/* Asked from the explorer's "Ask it something" tab, when the canned list does
+ * not cover it. Stored against the account; a super user answers it at
+ * /admin/questions. */
+app.post('/api/questions', wrap(async (req, res) => {
+  try {
+    const question = await askQuestion({ user: req.user, text: req.body?.text });
+    await audit({
+      user: req.user, action: ACTIONS.QUESTION_ASKED, entityType: 'question',
+      entityId: question.questionId, ip: clientIp(req),
+    });
+    res.json({ ok: true, question });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+}));
+
+app.get('/api/questions/mine', wrap(async (req, res) => {
+  res.json({ questions: await myQuestions(req.user.userId) });
+}));
+
 app.post('/api/refresh', wrap(async (req, res) => {
   clearCache();
   clearFormCache();
@@ -284,14 +316,14 @@ app.get('/download/explorer', (req, res, next) => {
    * every request and never needed this file. */
   if (!fs.existsSync(config.paths.explorerBuilt)) {
     return res.status(404).type('text/plain').send(
-      'The offline copy of the NAHDIS Explorer is not on this server.\n\n'
+      'The offline copy of the Abattoir Explorer is not on this server.\n\n'
       + 'It is a handover artefact rather than part of the application, so it is put in\n'
       + 'place separately: copy it across and point EXPLORER_BUILT in .env at it.\n\n'
       + 'Nothing else is affected. The explorer is live at /explorer, built from the\n'
       + 'database on every request, and the phone app still downloads from /download/mobile.'
     );
   }
-  res.download(config.paths.explorerBuilt, 'NAHDIS Explorer.html');
+  res.download(config.paths.explorerBuilt, 'Abattoir Explorer.html');
 });
 
 app.get('/download/mobile', (req, res, next) => {
@@ -341,7 +373,7 @@ ${card('/returns', 'Returns', 'Everything in your scope, and how far each one ha
 ${canApprove(req.user) ? card('/approvals', 'Approvals', 'Approve submitted returns, and chase the abattoirs that have not filed.') : ''}
 
 <h2>Look at the figures</h2>
-${card('/explorer', 'NAHDIS Explorer', 'Eleven years of returns, read from SQL when you open it. This is where you land after signing in.')}
+${card('/explorer', 'Abattoir Explorer', 'Eleven years of returns, read from SQL when you open it. This is where you land after signing in.')}
 ${card('/mobile', 'Schedule 8 Mobile', 'The phone capture form, for the abattoirs you cover.')}
 
 ${req.user.role === 'super' ? `<h2>Administration</h2>
@@ -427,7 +459,7 @@ function start() {
 
     console.log('');
     console.log(`    sign in          ${b}/login`);
-    console.log(`    NAHDIS Explorer  ${b}/explorer`);
+    console.log(`    Abattoir Explorer  ${b}/explorer`);
     console.log(`    capture a return ${b}/returns`);
     console.log(`    approvals        ${b}/approvals`);
     console.log(`    health           ${b}/api/health`);

@@ -171,6 +171,26 @@ CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`AuditLog\` (
   Detail     TEXT         NULL,
   IpAddress  VARCHAR(64)  NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
+
+  /* A question the "Ask it something" tab's canned list did not answer.
+   * Anyone signed in may ask one; only a super user may answer it - the same
+   * layer that already holds the register and the disease list. */
+  [`arms.Question`, `
+CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`Question\` (
+  QuestionId       INT AUTO_INCREMENT PRIMARY KEY,
+  AskedByUserId    INT          NOT NULL,
+  AskedByName      VARCHAR(120) NOT NULL,
+  QuestionText     TEXT         NOT NULL,
+  Status           VARCHAR(10)  NOT NULL DEFAULT 'open',
+  AnswerText       TEXT         NULL,
+  AnsweredByUserId INT          NULL,
+  AnsweredByName   VARCHAR(120) NULL,
+  AnsweredAt       DATETIME     NULL,
+  CreatedAt        DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  CONSTRAINT FK_Question_AskedBy FOREIGN KEY (AskedByUserId)
+    REFERENCES \`${ARMS}\`.\`AppUser\` (UserId),
+  CONSTRAINT CK_Question_Status CHECK (Status IN ('open','answered'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
 ];
 
 /* Indexes are created separately because MySQL has no IF NOT EXISTS for them.
@@ -180,6 +200,8 @@ CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`AuditLog\` (
 const INDEXES = [
   [ARMS, 'Session', 'IX_Session_User', '(UserId, ExpiresAt)'],
   [ARMS, 'AuditLog', 'IX_Audit_At', '(At DESC)'],
+  [ARMS, 'Question', 'IX_Question_Status', '(Status, CreatedAt DESC)'],
+  [ARMS, 'Question', 'IX_Question_AskedBy', '(AskedByUserId, CreatedAt DESC)'],
   [null, 'FormData', 'IX_FormData_Org_Period', '(ORG_ID, FRMD_StartDate, FRMD_Status, FRMD_Revision)'],
   [null, 'FormDataItems', 'IX_FormDataItems_Return', '(FRMD_ID)'],
   [null, 'FormDataItemParts', 'IX_FormDataItemParts_Item', '(FDI_ID)'],

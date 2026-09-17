@@ -35,7 +35,8 @@ a{color:#1d6b4f}
 
 /* the header band, matching the explorer's .top exactly */
 .top{background:#123a2c;color:#fff;padding:12px 16px}
-.top h1{font-size:18px;line-height:1.2;letter-spacing:.01em}
+.top h1{font-size:16px;line-height:1.25;letter-spacing:.01em}
+@media (max-width:640px){.top h1{font-size:14.5px}}
 .top .sub{display:block;font-size:11.5px;font-weight:400;opacity:.78;margin-top:3px}
 
 /* the navigation strip, matching the explorer's .tabs */
@@ -113,10 +114,10 @@ code{background:#f4f7f5;border:1px solid #dde4e0;border-radius:5px;padding:1px 5
 
 /* the signed-out pages: login, and the first-run password change */
 .plain{max-width:26rem;margin:0 auto;padding:0 16px 40px}
-.brand{text-align:center;padding:38px 0 22px}
+.brand{text-align:center;padding:38px 16px 22px}
 .brand .mark{display:inline-block;background:#123a2c;color:#fff;border-radius:12px;
-      padding:14px 22px;letter-spacing:.02em}
-.brand .mark b{font-size:22px;font-weight:800;display:block;line-height:1.1}
+      padding:14px 22px;letter-spacing:.02em;max-width:22rem}
+.brand .mark b{font-size:18px;font-weight:800;display:block;line-height:1.25}
 .brand .mark span{font-size:11px;opacity:.8;display:block;margin-top:4px}
 .brand .org{color:#5b6b63;font-size:11.5px;margin-top:12px}
 `;
@@ -146,8 +147,7 @@ export function plainPage({ title, body }) {
 <title>${esc(title)} · ARMS</title>
 <style>${CSS}</style></head><body>
 <div class="brand">
-  <span class="mark"><b>ARMS</b><span>Animal Health &amp; Disease Information System</span></span>
-  <div class="org">Food Safety Agency (Pty) Ltd</div>
+  <span class="mark"><b>Abattoir Reporting and Monitoring System</b><span>ARMS</span></span>
 </div>
 <div class="plain">${body}</div>
 </body></html>`;
@@ -158,11 +158,11 @@ function header(user, active) {
   const links = [['/explorer', 'Explorer'], ['/returns', 'Returns']];
   if (user.role === 'admin' || user.role === 'super') links.push(['/approvals', 'Approvals']);
   links.push(['/mobile', 'Phone app'], ['/home', 'Summary']);
-  if (user.role === 'super') links.push(['/admin/users', 'Users'], ['/admin/audit', 'Audit']);
+  if (user.role === 'super') links.push(['/admin/users', 'Users'], ['/admin/audit', 'Audit'], ['/admin/questions', 'Questions']);
   links.push(['/logout', 'Sign out']);
 
   return `<header class="top">
-  <h1>ARMS<span class="sub">Animal Health &amp; Disease Information System</span></h1>
+  <h1>Abattoir Reporting and Monitoring System<span class="sub">ARMS</span></h1>
 </header>
 <nav class="nav">
   ${links.map(([href, label]) =>

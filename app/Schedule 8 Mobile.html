@@ -85,7 +85,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 <div id="app"></div>
 
 <script>
-/* NAHDIS / ARMS -- Schedule 8 monthly return, inspector's phone app.
+/* ARMS -- Schedule 8 monthly return, inspector's phone app.
    Strict ES5, single file, works offline from file:// once opened.
    Form definition taken verbatim from the Schedule8 database (Forms/Groups/Items/Parts),
    form version 2. Units: condemnation statistics are in HEAD, "Partially Condemned
@@ -104,7 +104,7 @@ var ORGANS = ["Heads","Kidneys","Lungs","Spleen","Tongues","Tripes","Hearts",
 
 /* CONDEMNATION STATISTICS -- whole carcasses, counted in HEAD.
    g  = what the inspector reads on the phone
-   db = the sub-group string as it is stored in the NAHDIS Groups table. The two
+   db = the sub-group string as it is stored in the Groups table. The two
         differ (the register has no ampersand); keeping both here stops the export
         string drifting away from the database it has to join to. */
 var WC = [
@@ -168,7 +168,7 @@ var OFFAL = ["Abnormal Pigmentation","Abscessations","Actinomycosis","Anaemia","
 /* LAIRAGE REPORT -- "NUMBER OF ANIMALS -" */
 var LAIR = ["Dead on arrival","Down on arrival","Destroyed","Dead in pen","Down in pen"];
 
-/* FSA abattoirs that submitted a Schedule 8 in the last 12 months (NAHDIS registry).
+/* Abattoirs that submitted a Schedule 8 in the last 12 months (the registry).
    sp = species this abattoir has actually reported slaughtering. */
 var ABATTOIRS = [
  [5,"Aliwal Abattoir","Cattle,Pigs,Sheep"],[664,"Allen's Abattoir","Cattle,Sheep"],
@@ -542,7 +542,7 @@ function validate(r){
 }
 
 /* ---------- export ----------
-   Shape mirrors the NAHDIS tables exactly: FormData -> FormDataItems ->
+   Shape mirrors the source tables exactly: FormData -> FormDataItems ->
    FormDataItemParts. Offal container rows carry value 0 and the real numbers sit
    in parts, which is how the existing 97 369 offal rows are stored. */
 function buildPayload(r){
@@ -702,7 +702,7 @@ function top(title, sub, back){
 }
 
 function vHome(){
-  var h = top('Schedule 8', 'Monthly abattoir return · NAHDIS');
+  var h = top('Schedule 8', 'Monthly abattoir return');
   h += '<div class="wrap">';
   h += '<div class="card"><label for="insp">Your name (goes on every return)</label>' +
        '<input id="insp" type="text" autocomplete="name" value="'+esc(db.inspector)+'" ' +
@@ -1016,7 +1016,7 @@ function vExport(){
   h += '<div class="card"><h3>For WhatsApp or e-mail</h3>' +
        '<textarea class="out" id="txt" readonly>'+esc(txt)+'</textarea>' +
        '<button class="btn sec" data-copy="txt" style="margin-top:8px">Copy the summary</button></div>';
-  h += '<div class="card"><h3>For the NAHDIS system</h3>' +
+  h += '<div class="card"><h3>For ARMS</h3>' +
        '<div class="tiny" style="margin-bottom:6px">Machine-readable. Loads straight into the ' +
        'Schedule 8 tables — give this one to the office.</div>' +
        '<textarea class="out" id="jsn" readonly>'+esc(json)+'</textarea>' +

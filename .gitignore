@@ -23,6 +23,9 @@
 *.trn
 *.mdf
 *.ldf
+*.sql
+*.sql.gz
+ARMS_DB_Export_*/
 
 # The BUILT explorer: 2,4 MB with every abattoir's figures and 529 telephone
 # numbers compiled into it. app/explorer-template.html is the safe one - it is

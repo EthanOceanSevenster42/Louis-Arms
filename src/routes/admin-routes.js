@@ -13,6 +13,7 @@ import { audit, ACTIONS, recentAudit } from '../audit.js';
 import { getFormDefinition } from '../form-definition.js';
 import { PROVINCES } from '../rc.js';
 import { page, esc, messages, csrfField } from '../pages.js';
+import { listQuestions, answerQuestion } from '../questions.js';
 
 export const adminRoutes = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -103,9 +104,9 @@ ${users.map((u, i) => `<tr>
 </form>
 
 <div class="note">Authentication is still the open design decision. These are ARMS's own accounts.
-Users span FSA staff, abattoir staff and provincial government, and FSA's Microsoft 365 directory
-covers only the first — so federating covers a third of the people and issuing accounts covers all
-of them. This is the second, built so the first can replace it later.</div>`,
+Users span office staff, abattoir staff and provincial government, and the organisation's own
+Microsoft 365 directory covers only the first — so federating covers a third of the people and
+issuing accounts covers all of them. This is the second, built so the first can replace it later.</div>`,
   }));
 }));
 
@@ -163,6 +164,63 @@ adminRoutes.post('/admin/users/:id/reset', wrap(async (req, res) => {
     detail: { username: target.username }, ip: clientIp(req),
   });
   res.redirect(`/admin/users?created=${encodeURIComponent(target.username)}&temp=${encodeURIComponent(temp)}`);
+}));
+
+/* ---------------------------------------------------------------------------
+ * Questions asked from the explorer's "Ask it something" tab, not covered by
+ * the canned list there. Open ones first; a super user's answer is stored
+ * against the question and read back by the person who asked.
+ * ------------------------------------------------------------------------- */
+
+adminRoutes.get('/admin/questions', wrap(async (req, res) => {
+  const questions = await listQuestions();
+  const open = questions.filter((q) => q.status === 'open');
+  const answered = questions.filter((q) => q.status === 'answered');
+
+  const row = (q, answerable) => `<div class="card">
+  <b>${esc(q.askedByName)}</b> <span class="tiny muted">${esc(String(q.createdAt).slice(0, 16).replace('T', ' '))}</span>
+  <p>${esc(q.text)}</p>
+  ${answerable ? `
+  <form method="post" action="/admin/questions/${q.questionId}/answer">
+    ${csrfField(req.csrfToken)}
+    <textarea name="answer" rows="3" placeholder="Your answer" required
+      style="width:100%;font:inherit;padding:8px 10px;border:1px solid #c8d2cc;border-radius:7px"></textarea>
+    <div class="row"><button type="submit">Answer</button></div>
+  </form>` : `
+  <div class="msg ok"><b>${esc(q.answeredByName)} answered</b>
+    ${esc(q.answeredAt ? String(q.answeredAt).slice(0, 16).replace('T', ' ') : '')}<br>${esc(q.answer)}</div>`}
+</div>`;
+
+  res.type('html').send(page({
+    title: 'Questions', user: req.user, active: '/admin/questions',
+    body: `
+<h1>Questions</h1>
+<p class="sub">Asked from the explorer's "Ask it something" tab, when the canned list there did not
+cover it. The person who asked sees your answer the next time they open that tab.</p>
+
+${messages({ ok: req.query.done ? 'Answer saved.' : null, bad: req.query.error || null })}
+
+<h2>Waiting for an answer (${open.length})</h2>
+${open.length ? open.map((q) => row(q, true)).join('') : '<div class="card"><span class="muted">Nothing waiting.</span></div>'}
+
+${answered.length ? `<h2>Answered (${answered.length})</h2>${answered.map((q) => row(q, false)).join('')}` : ''}`,
+  }));
+}));
+
+adminRoutes.post('/admin/questions/:id/answer', wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.redirect('/admin/questions?error=No+such+question.');
+
+  try {
+    await answerQuestion({ id, answer: req.body?.answer, admin: req.user });
+    await audit({
+      user: req.user, action: ACTIONS.QUESTION_ANSWERED, entityType: 'question',
+      entityId: id, ip: clientIp(req),
+    });
+    res.redirect('/admin/questions?done=1');
+  } catch (err) {
+    res.redirect(`/admin/questions?error=${encodeURIComponent(err.message)}`);
+  }
 }));
 
 /* ---------------------------------------------------------------------------
