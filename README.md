@@ -40,6 +40,7 @@ It is stored only as a hash and must be changed at first sign-in.
 | `npm run verify -- --password <pw>` | Fetches both pages from a running server and proves the injected values are real. |
 | `npm run verify-auth -- --password <pw>` | End-to-end: login, the three layers, capture, approval, revision. **Writes real rows and removes them again.** |
 | `npm run init-db` | Creates tables; creates a super user only if no account exists. Safe to re-run. |
+| `npm run create-user -- --username <name> --name "<full name>" --role super` | Issues one more account from the console, for when nobody can sign in to do it at `/admin/users`. Prints a temporary password once. |
 
 ---
 
