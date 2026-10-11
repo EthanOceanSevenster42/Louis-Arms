@@ -26,7 +26,7 @@ export async function cleanupTestData({ usernames = [], frmdIds = [], prefix = n
    * real usernames before anything is removed. */
   let names = usernames.map((u) => String(u).toLowerCase());
   if (prefix) {
-    const rows = await sql`SELECT Username, FullName FROM arms.AppUser WHERE Username LIKE ${`${prefix}%`}`;
+    const rows = await sql`SELECT Username, FullName FROM arms.AppUser WHERE Username COLLATE "C" LIKE ${`${prefix}%`}`;
     names = [...new Set([...names, ...rows.map((r) => String(r.Username).toLowerCase())])];
   }
   if (!names.length) return out;
@@ -46,7 +46,7 @@ export async function cleanupTestData({ usernames = [], frmdIds = [], prefix = n
       /* Refuse anything that is not demonstrably the test's own work. */
       const [row] = await t.sql`
 SELECT FRMD_Id, FRMD_UserName, ORG_ID, FRMD_Status,
-       DATE_FORMAT(FRMD_StartDate, '%Y-%m') AS Period
+       to_char(FRMD_StartDate, 'YYYY-MM') AS Period
 FROM FormData WHERE FRMD_Id = ${id}`;
       if (!row) continue;
       if (!captured.has(String(row.FRMD_UserName))) {
@@ -59,7 +59,7 @@ FROM FormData WHERE FRMD_Id = ${id}`;
       const family = await t.sql`
 SELECT FRMD_Id, FRMD_UserName FROM FormData
 WHERE ORG_ID = ${Number(row.ORG_ID)}
-  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${String(row.Period)}`;
+  AND to_char(FRMD_StartDate, 'YYYY-MM') = ${String(row.Period)}`;
 
       for (const f of family) {
         if (!captured.has(String(f.FRMD_UserName))) {
@@ -72,8 +72,8 @@ SELECT COUNT(*) AS n FROM FormDataItemParts p
 JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
         const [i] = await t.sql`SELECT COUNT(*) AS n FROM FormDataItems WHERE FRMD_ID = ${fid}`;
 
-        await t.sql`DELETE p FROM FormDataItemParts p
-                    JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
+        await t.sql`DELETE FROM FormDataItemParts p
+                    USING FormDataItems i WHERE i.FDI_Id = p.FDI_ID AND i.FRMD_ID = ${fid}`;
         await t.sql`DELETE FROM FormDataItems WHERE FRMD_ID = ${fid}`;
         await t.sql`DELETE FROM FormData WHERE FRMD_Id = ${fid}`;
 
@@ -84,8 +84,8 @@ JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID WHERE i.FRMD_ID = ${fid}`;
     }
 
     for (const n of names) {
-      await t.sql`DELETE s FROM arms.Session s
-                  JOIN arms.AppUser u ON u.UserId = s.UserId WHERE u.Username = ${n}`;
+      await t.sql`DELETE FROM arms.Session s
+                  USING arms.AppUser u WHERE u.UserId = s.UserId AND u.Username = ${n}`;
       const d = await t.run`DELETE FROM arms.AppUser WHERE Username = ${n}`;
       out.accounts += d.affectedRows;
     }
@@ -102,7 +102,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const i = process.argv.indexOf('--prefix');
   const prefix = i > -1 ? process.argv[i + 1] : 't.';
 
-  const accounts = await sql`SELECT Username, FullName FROM arms.AppUser WHERE Username LIKE ${`${prefix}%`}`;
+  const accounts = await sql`SELECT Username, FullName FROM arms.AppUser WHERE Username COLLATE "C" LIKE ${`${prefix}%`}`;
   if (!accounts.length) {
     console.log(`\n  No accounts starting "${prefix}". Nothing to clear.\n`);
   } else {

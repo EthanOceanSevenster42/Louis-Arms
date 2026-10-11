@@ -42,7 +42,8 @@ export async function askQuestion({ user, text }) {
   const clean = String(text).trim();
   const { insertId } = await run`
 INSERT INTO arms.Question (AskedByUserId, AskedByName, QuestionText)
-VALUES (${user.userId}, ${user.fullName}, ${clean})`;
+VALUES (${user.userId}, ${user.fullName}, ${clean})
+RETURNING QuestionId`;
 
   return questionById(insertId);
 }
@@ -70,7 +71,7 @@ export async function answerQuestion({ id, answer, admin }) {
 
   await sql`UPDATE arms.Question
     SET AnswerText = ${clean}, AnsweredByUserId = ${admin.userId},
-        AnsweredByName = ${admin.fullName}, AnsweredAt = UTC_TIMESTAMP(), Status = 'answered'
+        AnsweredByName = ${admin.fullName}, AnsweredAt = now(), Status = 'answered'
     WHERE QuestionId = ${Number(id)}`;
 
   return questionById(id);

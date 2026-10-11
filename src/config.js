@@ -100,27 +100,30 @@ export const config = {
     sessionHours: int('SESSION_HOURS', 8),
   },
 
-  /* MySQL. There is no named-instance or integrated-security case here: a
-   * MySQL server is a host and a port, and the login is always a MySQL user. */
+  /* PostgreSQL. One database holds everything; the three recovered databases
+   * are schemas inside it, and ARMS's own tables are the `arms` schema. */
   sql: {
     server: req('SQL_SERVER'),
-    port: int('SQL_PORT', 3306),
+    port: int('SQL_PORT', 5432),
+    database: opt('SQL_DATABASE', 'arms'),
     user: req('SQL_USER'),
     password: req('SQL_PASSWORD'),
-    /* TLS to the database. On by default; a MySQL that is not on this machine
-     * is carrying condemnation detail across a network. */
+    /* TLS to the database. On by default; a Postgres that is not on this
+     * machine is carrying condemnation detail across a network. */
     encrypt: bool('SQL_ENCRYPT', true),
     /* Accept a self-signed server certificate. True is right for a local or
-     * private-network MySQL using its own generated certificate; set it false
-     * once the server presents one your CA store trusts. */
+     * private-network Postgres using its own generated certificate; set it
+     * false once the server presents one your CA store trusts. */
     trustServerCertificate: bool('SQL_TRUST_CERT', true),
     requestTimeout: int('SQL_TIMEOUT_MS', 900000),
     poolMax: int('SQL_POOL_MAX', 10),
   },
 
-  /* The three databases, named separately because they are restored under
-   * whatever names the host site uses. Every cross-database reference in the
-   * queries is built from these, never written out literally. */
+  /* The three recovered databases, now schemas, named separately because a
+   * site restores them under whatever names it uses. Every cross-schema
+   * reference in the queries is built from these, never written out
+   * literally. Postgres folds names to lower case, so NAHDIS_FSA and
+   * nahdis_fsa are the same schema. */
   databases: {
     data: req('DB_DATA'),
     registry: req('DB_REGISTRY'),
@@ -144,10 +147,10 @@ export const config = {
      * hardcodes NAHDIS_FSA..regions and therefore breaks or misfires whenever
      * the registry database is not called exactly that. 'leave' or 'disable' -
      * see the long note in auth/schema.js. */
-    /* SQL Server's NAHDIS_FSA.dbo.GetProvince(REG_ID) did not survive the move
-     * to MySQL - its body is inside the .bak. This is the SQL expression that
-     * yields an abattoir's province in the register query, so it can be
-     * corrected in .env once the original function is transcribed. Display
+    /* The SQL expression that yields an abattoir's province in the register
+     * query. SQL Server had NAHDIS_FSA.dbo.GetProvince(REG_ID); it is ported as
+     * nahdis_fsa.getprovince() in deploy/postgres/legacy-schema.sql, and the
+     * live value is normally the arms.Setting row, not this default. Display
      * only: access scope comes from AppUser.ScopeProvince, not from this. */
     provinceExpr: opt('ARMS_PROVINCE_EXPR', 'r.REG_Name'),
     legacyNotifyTrigger: opt('LEGACY_NOTIFY_TRIGGER', 'leave').toLowerCase(),

@@ -12,7 +12,7 @@ import { revokeAllForUser, activeSessionCount } from '../auth/sessions.js';
 import { audit, ACTIONS, recentAudit } from '../audit.js';
 import { getFormDefinition } from '../form-definition.js';
 import { PROVINCES } from '../rc.js';
-import { page, esc, messages, csrfField } from '../pages.js';
+import { page, esc, messages, csrfField, when } from '../pages.js';
 import { listQuestions, answerQuestion } from '../questions.js';
 
 export const adminRoutes = express.Router();
@@ -57,7 +57,7 @@ ${users.map((u, i) => `<tr>
   <td>${u.isActive ? '<span class="pill approved">active</span>' : '<span class="pill">disabled</span>'}
       ${u.mustChangePassword ? '<span class="pill submitted">temp password</span>' : ''}</td>
   <td class="n">${sessions[i]}</td>
-  <td class="tiny muted">${esc(u.lastLoginAt ? String(u.lastLoginAt).slice(0, 16).replace('T', ' ') : 'never')}</td>
+  <td class="tiny muted">${esc(u.lastLoginAt ? when(u.lastLoginAt) : 'never')}</td>
   <td class="tiny">
     ${u.userId === req.user.userId ? '<span class="muted">you</span>' : `
     <form method="post" action="/admin/users/${u.userId}/active" style="display:inline">
@@ -134,7 +134,7 @@ adminRoutes.post('/admin/users/:id/active', wrap(async (req, res) => {
   const id = Number(req.params.id);
   /* The reset route below gets this for free: it loads through findById, which
    * folds a NaN to 0 and finds nobody. This one goes straight to the UPDATE,
-   * where a NaN would reach MySQL as a column name and raise a 500 instead of
+   * where a NaN would reach the database as a column name and raise a 500 instead of
    * saying there is no such account. Answer the same way reset does. */
   if (!Number.isInteger(id) || id <= 0) return res.redirect('/admin/users?error=No+such+account.');
   if (id === req.user.userId) return res.redirect('/admin/users?error=You+cannot+disable+your+own+account.');
@@ -178,7 +178,7 @@ adminRoutes.get('/admin/questions', wrap(async (req, res) => {
   const answered = questions.filter((q) => q.status === 'answered');
 
   const row = (q, answerable) => `<div class="card">
-  <b>${esc(q.askedByName)}</b> <span class="tiny muted">${esc(String(q.createdAt).slice(0, 16).replace('T', ' '))}</span>
+  <b>${esc(q.askedByName)}</b> <span class="tiny muted">${esc(when(q.createdAt))}</span>
   <p>${esc(q.text)}</p>
   ${answerable ? `
   <form method="post" action="/admin/questions/${q.questionId}/answer">
@@ -188,7 +188,7 @@ adminRoutes.get('/admin/questions', wrap(async (req, res) => {
     <div class="row"><button type="submit">Answer</button></div>
   </form>` : `
   <div class="msg ok"><b>${esc(q.answeredByName)} answered</b>
-    ${esc(q.answeredAt ? String(q.answeredAt).slice(0, 16).replace('T', ' ') : '')}<br>${esc(q.answer)}</div>`}
+    ${esc(when(q.answeredAt))}<br>${esc(q.answer)}</div>`}
 </div>`;
 
   res.type('html').send(page({
@@ -241,7 +241,7 @@ ${rows.length === 0 ? '<div class="card"><span>Nothing recorded yet.</span></div
 <div class="scroll"><table>
 <tr><th>When</th><th>Who</th><th>What</th><th>On</th><th>Detail</th><th>From</th></tr>
 ${rows.map((r) => `<tr>
-  <td class="tiny muted">${esc(String(r.at).slice(0, 19).replace('T', ' '))}</td>
+  <td class="tiny muted">${esc(when(r.at, { seconds: true }))}</td>
   <td class="tiny">${esc(r.username || '—')}</td>
   <td class="tiny"><code>${esc(r.action)}</code></td>
   <td class="tiny muted">${esc(r.entityType || '')}${r.entityId ? ` ${esc(r.entityId)}` : ''}</td>

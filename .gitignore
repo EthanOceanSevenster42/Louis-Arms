@@ -25,7 +25,11 @@
 *.ldf
 *.sql
 *.sql.gz
+*.dump
 ARMS_DB_Export_*/
+# The one exception: the shape of the recovered tables, with no rows in it.
+# Check it still has none before committing a change to it.
+!deploy/postgres/legacy-schema.sql
 
 # The BUILT explorer: 2,4 MB with every abattoir's figures and 529 telephone
 # numbers compiled into it. app/explorer-template.html is the safe one - it is

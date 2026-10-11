@@ -22,7 +22,7 @@ import {
 } from '../capture.js';
 import { validateReturn, PERIOD_RE, periodStart, periodEnd } from '../validate-return.js';
 import { getFormDefinition } from '../form-definition.js';
-import { page, esc, messages, problemList, csrfField, statusPill } from '../pages.js';
+import { page, esc, messages, problemList, csrfField, statusPill, when } from '../pages.js';
 
 export const captureRoutes = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -239,7 +239,7 @@ captureRoutes.get('/returns/open', requireAuth, wrap(async (req, res) => {
  * The capture desk itself
  * ------------------------------------------------------------------------- */
 
-async function renderDesk(req, res, { ret, orgId, period, orgName, blocks, validation = null, notice = null }) {
+async function renderDesk(req, res, { ret, orgId, period, orgName, blocks, validation = null, notice = null, error = null }) {
   const def = await getFormDefinition();
   const readOnly = ret && (ret.status === STATUS.APPROVED || ret.status === STATUS.SUPERSEDED);
 
@@ -332,6 +332,7 @@ async function renderDesk(req, res, { ret, orgId, period, orgName, blocks, valid
   ${ret ? `· ${statusPill(ret.status)} · revision ${ret.revision}` : '· not yet started'}</p>
 
 ${notice ? messages({ ok: notice }) : ''}
+${error ? messages({ bad: error }) : ''}
 ${validation ? problemList('This return cannot be submitted yet', validation.probs) : ''}
 ${validation ? problemList('Worth a look before submitting', validation.warns, 'warn') : ''}
 
@@ -362,7 +363,7 @@ ${readOnly ? `<div class="msg ok">This return is ${esc(ret.status.toLowerCase())
   ${readOnly ? '' : `<div class="card">
     <label for="addsp">Add a species</label>
     <div class="row" style="margin:0">
-      <select id="addsp" style="max-width:16rem">${opts(def.species)}</select>
+      <select id="addsp" name="addsp" style="max-width:16rem">${opts(def.species)}</select>
       <button type="submit" name="addSpecies" value="1" class="ghost">Add</button>
     </div>
   </div>
@@ -383,7 +384,7 @@ ${history.length > 1 ? `<h2>Revisions</h2><div class="scroll"><table>
 <tr><th>Rev</th><th>Status</th><th>Captured by</th><th>Approved by</th><th>When</th></tr>
 ${history.map((h) => `<tr><td class="n">${h.revision}</td><td>${statusPill(h.status)}</td>
   <td class="tiny">${esc(h.capturedBy || '—')}</td><td class="tiny">${esc(h.approvedBy || '—')}</td>
-  <td class="tiny muted">${esc(h.approvedDate ? String(h.approvedDate).slice(0, 10) : '—')}</td></tr>`).join('')}
+  <td class="tiny muted">${esc(h.approvedDate ? when(h.approvedDate, { dateOnly: true }) : '—')}</td></tr>`).join('')}
 </table></div><p class="tiny muted">Nothing is ever deleted. A superseded revision stays in the
 record with who changed it and when.</p>` : ''}
 
@@ -466,6 +467,7 @@ captureRoutes.get('/returns/:id', requireAuth, wrap(async (req, res, next) => {
 
   await renderDesk(req, res, {
     ret, orgId: ret.orgId, period: ret.period, orgName: ret.orgName, blocks,
+    error: req.query.error ? String(req.query.error).slice(0, 300) : null,
   });
 }));
 
@@ -539,7 +541,17 @@ captureRoutes.post('/returns/:id/save', requireAuth, wrap(async (req, res, next)
 }));
 
 captureRoutes.post('/returns/:id/revise', requireAuth, requireApprover, wrap(async (req, res) => {
-  const result = await reviseReturn({ frmdId: req.params.id, user: req.user, reason: req.body.reason });
+  /* A refusal - no reason given, not approved, gone - is a sentence on the
+   * return's own page, not the 500 it used to raise. */
+  let result;
+  try {
+    result = await reviseReturn({ frmdId: req.params.id, user: req.user, reason: req.body.reason });
+  } catch (err) {
+    const id = Number(req.params.id);
+    return res.redirect(Number.isInteger(id) && id > 0
+      ? `/returns/${id}?error=${encodeURIComponent(err.message)}`
+      : '/returns');
+  }
   await audit({
     user: req.user, action: ACTIONS.RETURN_REVISED, entityType: 'return', entityId: result.frmdId,
     detail: { supersedes: result.supersedes, revision: result.revision, reason: req.body.reason }, ip: clientIp(req),

@@ -89,8 +89,8 @@ SELECT (SELECT COUNT(*) FROM ${D.data('FormData')}) AS returns,
        (SELECT COUNT(*) FROM ${D.data('FormDataItems')}) AS items,
        (SELECT COUNT(*) FROM ${D.data('FormDataItemParts')}) AS parts,
        (SELECT COUNT(*) FROM ${D.registry('AbattoirMaster')}) AS abattoirs,
-       (SELECT DATE_FORMAT(MIN(FRMD_StartDate), '%Y-%m') FROM ${D.data('FormData')}) AS firstPeriod,
-       (SELECT DATE_FORMAT(MAX(FRMD_StartDate), '%Y-%m') FROM ${D.data('FormData')}) AS lastPeriod`);
+       (SELECT to_char(MIN(FRMD_StartDate), 'YYYY-MM') FROM ${D.data('FormData')}) AS firstPeriod,
+       (SELECT to_char(MAX(FRMD_StartDate), 'YYYY-MM') FROM ${D.data('FormData')}) AS lastPeriod`);
     out.ok = true;
     out.counts = rows[0];
     out.accounts = await countUsers().catch(() => null);

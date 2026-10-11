@@ -1,7 +1,7 @@
 # 6 — The backend
 
 **Node · serves the two applications in `1 - The system` over HTTP, reads every value live from
-the SQL Server databases in `3 - The database`, and writes returns back into them behind a login.**
+PostgreSQL, and writes returns back into it behind a login.**
 
 ---
 
@@ -31,6 +31,8 @@ npm run init-db           # creates the ARMS tables and the first super user
 npm start
 ```
 
+It needs a Postgres database with the recovered data in it — see *Deploying* and *The data* below.
+
 `npm run init-db` prints a temporary password for the first super user **once**. Write it down.
 It is stored only as a hash and must be changed at first sign-in.
 
@@ -46,55 +48,40 @@ It is stored only as a hash and must be changed at first sign-in.
 
 ## Deploying to a cloud server
 
-Read this whole section before starting. Every trap named here cost us at least half a day.
+Read this whole section before starting.
 
 ### What you need
 
 | | |
 |---|---|
 | **Node** | 18 or newer. The app is pure JavaScript — no native modules, no build step. |
-| **SQL Server** | 2016 or newer, reachable over **TCP**. Express is enough; the whole dataset is under 40 MB. |
-| **The three `.bak` files** | `Schedule8Data.bak`, `NAHDIS_FSA.bak`, `Schedule8.bak`. **Not in this repository — see "The data" below.** |
-| **The two applications** | `NAHDIS Explorer.html`, `Schedule 8 Mobile.html`, and `explorer-template.html`. Also not in this repository; they are folders 1 and 2 of the handover. |
+| **PostgreSQL** | 16 or newer, built with ICU (every packaged build is). The whole dataset is under 100 MB. |
+| **The data** | The three recovered databases, loaded as schemas. **Not in this repository — see "The data" below.** |
+| **The two applications** | `NAHDIS Explorer.html`, `Schedule 8 Mobile.html`, and `explorer-template.html`. `app/` carries the template and the phone app; the built Explorer is not in the repository. |
 | **TLS** | A certificate and a reverse proxy. Sessions are cookies; a cookie on plain HTTP is a password on plain HTTP. |
 
-### 1. Restore the databases
+### 1. Create the database and the login
 
-```powershell
-.\deploy\1-restore-databases.ps1 -BakFolder "D:\arms-baks"
+As the Postgres superuser:
+
+```sql
+CREATE ROLE arms_app LOGIN PASSWORD '...';
+CREATE DATABASE arms OWNER arms_app ENCODING 'UTF8' TEMPLATE template0;
 ```
 
-It stages the backups where SQL can read them, builds the `MOVE` clauses from each backup's own
-file list, restores all three, and prints the row counts so you can see the data landed. Add
-`-Server "sqlprod,1433" -SqlUser sa -SqlPassword "..."` for a remote instance, and `-Suffix "_ARMS"`
-if the plain names are taken.
+One database holds everything. Postgres cannot join across databases and this backend joins the
+register to the returns everywhere, so the three databases recovered from SQL Server are three
+**schemas** in it — `nahdis_fsa`, `schedule8`, `schedule8data` — and ARMS's own tables are a fourth,
+`arms`. `arms_app` owns the database so that `init-db` can create its tables; nothing else needs it.
 
-**Three things that will bite you, and the script handles all three:**
+### 2. Create the recovered tables
 
-- **SQL opens the `.bak`, not you.** Its service account usually cannot read a user profile folder,
-  and the failure is a bare `Operating system error 5 (Access is denied)` that reads like a corrupt
-  file. Keep backups somewhere the service account can reach.
-- **The `.mdf`/`.ldf` paths inside a backup are from the machine it came off** and will not exist on
-  yours. Every restore needs `MOVE` clauses built from `RESTORE FILELISTONLY`.
-- **The name `NAHDIS_FSA` is not free.** The 2016 trigger on `FormData` writes `NAHDIS_FSA..regions`
-  *literally*. If another database on the instance carries that name, the trigger reads that one
-  instead — silently. See *the legacy trigger* below.
-
-### 2. Create the login
-
-```powershell
-.\deploy\2-create-login.ps1 -Suffix "_ARMS"
+```
+psql -h <host> -U arms_app -d arms -f deploy/postgres/legacy-schema.sql
 ```
 
-Creates `arms_app` with the minimum rights, proves it can read what the backend needs, and prints
-the `.env` block to paste. **`db_datareader` does not include `EXECUTE`** — the register query calls
-the scalar function `GetProvince`, so without an explicit grant every page touching the register
-dies with *"The EXECUTE permission was denied"*. The script grants it; a hand-rolled login often
-does not.
-
-`db_ddladmin` on the data database is for `init-db` (it creates the `arms` schema and widens one
-column). If you would rather production not hold DDL rights, run `init-db` once with an admin
-login and then re-run with `-NoDdl`.
+The shape of the recovered data, and `nahdis_fsa.getprovince()` — SQL Server's `GetProvince`,
+ported. Safe to run on an empty database; it drops nothing. Then load the data (below).
 
 ### 3. Configure
 
@@ -102,16 +89,14 @@ login and then re-run with `-NoDdl`.
 cp .env.example .env
 ```
 
-Fill in the block the login script printed, then:
+Fill in the `SQL_` block, then:
 
 ```
 PUBLIC_URL=https://arms.example.co.za
 HOST=127.0.0.1          # nginx fronts it; do not bind publicly
 SECURE_COOKIES=true     # required once you are on https
 TRUST_PROXY=true        # so the audit trail records the caller, not the proxy
-SQL_TRUST_CERT=false    # once SQL Server has a trusted certificate
-SYSTEM_DIR=/srv/arms/system
-BUILD_DIR=/srv/arms/build
+SQL_ENCRYPT=false       # only when Postgres is on the same machine
 ```
 
 **`TRUST_PROXY` must stay off when there is no proxy.** Unproxied, `X-Forwarded-For` is written by
@@ -121,17 +106,16 @@ the caller, and believing it lets anyone put any address into a national animal-
 
 ```
 npm ci --omit=dev
+npm run init-db          # ARMS's tables; prints the first super user's password ONCE
 npm run check
-npm run init-db          # prints the first super user's password ONCE
 npm start
 npm run verify -- --password <that password>
 ```
 
-`npm run check` proves the settings, the connection, the three databases, the headline figures and
-that both pages render — on the command line, before a person meets a broken page. Run it after
-every move. **Do not run `verify-auth` against production**: it writes real returns and approves
-one, and although it removes them again, a national record is not the place to find out it
-half-succeeded.
+`npm run check` proves the settings, the connection, the schemas, the headline figures and that
+both pages render — on the command line, before a person meets a broken page. Run it after every
+move. **Do not run `verify-auth` against production**: it writes real returns and approves one, and
+although it removes them again, a national record is not the place to find out it half-succeeded.
 
 ### 5. Run it
 
@@ -144,32 +128,16 @@ docker run --env-file .env -p 127.0.0.1:3000:3000 \
 ```
 
 or systemd — `deploy/arms.service`, which runs it unprivileged and read-only, since the app writes
-nothing to disk at all. All state is in SQL.
+nothing to disk at all. All state is in Postgres.
 
 Then put `deploy/arms.nginx.conf` in front of it for TLS, and `certbot --nginx`.
-
-### 6. The legacy trigger — decide deliberately
-
-`dbo.FormData` carries `trig_FormData_CheckNotifiableDeseases` from 2016. It fires on approval,
-builds a controlled-disease notification, and sends it through `sp_SendMail` — and it hardcodes
-`NAHDIS_FSA..regions`.
-
-- Restored under the **original names**, on an instance whose `sp_SendMail` is configured →
-  `LEGACY_NOTIFY_TRIGGER=leave`, and notifications keep working as they did.
-- Restored under **any other name** → the trigger reads the wrong database or fails the approval
-  outright. Set `LEGACY_NOTIFY_TRIGGER=disable`. **Nothing then sends controlled-disease
-  notifications — ARMS does not send them yet.** That is a real gap, and the reason handover
-  question 7 (*can the server send e-mail, and from which address*) needs answering.
-
-Re-enable at any time: `ALTER TABLE dbo.FormData ENABLE TRIGGER ALL`.
 
 ### Before it carries real traffic
 
 - [ ] TLS in front, `SECURE_COOKIES=true`, `HOST=127.0.0.1`
-- [ ] `SQL_TRUST_CERT=false` once SQL Server has a trusted certificate
-- [ ] `.env` is `0600` and owned by the service user — it holds the SQL password
+- [ ] `.env` is `0600` and owned by the service user — it holds the database password
 - [ ] The first super user's temporary password has been changed
-- [ ] Backups of `Schedule8Data` scheduled **and a restore tested** — handover question 5
+- [ ] Backups of the `arms` database scheduled (`pg_dump -Fc arms`) **and a restore tested** — handover question 5
 - [ ] Somebody has answered: **is this data allowed to leave South Africa?** Handover question 6.
       Choose the region before the data moves, not after.
 - [ ] `/api/health` is reachable from your monitoring and **not** from the public internet
@@ -185,60 +153,34 @@ go-live, not after.
 
 ## The data
 
-**The `.bak` files are deliberately NOT in this repository.**
+**The data is deliberately NOT in this repository.**
 
-They contain 155 user accounts with e-mail addresses, telephone numbers, password hashes and nine
+It contains 155 user accounts with e-mail addresses, telephone numbers, password hashes and nine
 South African ID numbers; 360 abattoir owner names and 586 telephone numbers; and eleven years of
 per-plant condemnation figures — the same figures this system's entire access-control layer exists
 to keep one abattoir from seeing about another.
 
-Ask Louis for **`ARMS-database-for-the-server.zip`** (6,4 MB compressed, 38,2 MB restored). It holds
-the three backups and its own read-me. Transfer it out of band — SFTP, or a private blob container
-with a short-lived SAS. Not by e-mail, and not into this repository.
-
-Verify what you receive before restoring it:
-
-```powershell
-Get-FileHash Schedule8Data.bak -Algorithm SHA256
-```
-
-| File | Bytes | SHA-256 |
-|---|---|---|
-| `NAHDIS_FSA.bak` | 5 486 080 | `0BC700A117429DB22711379313F36851C30DA96881C4FCD9DE37B596BE319912` |
-| `Schedule8.bak` | 4 363 776 | `17361038BCC0CC35C0699EB059E4B721BF8D31ADAE1D84C70FD585E10DB7D58A` |
-| `Schedule8Data.bak` | 30 203 392 | `C5CCE4E7A7C6294DBCC6B18BC40F5DD39909F4CDD4D67824873308542D7ED920` |
-
-Then confirm the counts the restore script prints: **10 875 returns · 147 611 items · 181 856 organ
-rows · 10 356 approved · 2015-12 to 2026-07**. If those do not match, you have the wrong backup or a
-truncated transfer — stop and get a clean copy rather than going live with part of a national
-animal-health record.
-
-Note this is the **pre-2022-cut archive** — it still holds the rows removed from Louis's working
-copy on 17 Aug 2026. That is harmless and probably what you want: ARMS reads from 2022 by
-configuration (`ARMS_FROM_YEAR`), so the earlier years are excluded from the reporting but remain
-available.
-
-`TeraTree.bak` is not needed. It appears nowhere in the source, has never been examined, and should
-not be put on a server before somebody looks at what is in it.
-
-### If the target is Azure SQL Database (PaaS)
-
-`.bak` restore is not supported there — that is a SQL Server / Managed Instance feature. Either use
-a VM or Managed Instance, or convert with `SqlPackage` on a machine that has the databases
-restored:
+The live source is the NAHDIS SQL Server, which the old system still writes to. A running ARMS
+copies from it; to stand up another, copy an existing ARMS database rather than starting again from
+the 2026 `.bak` files, which stop at July 2026:
 
 ```
-SqlPackage /a:Export /ssn:localhost /sdn:Schedule8Data /tf:Schedule8Data.bacpac
-SqlPackage /a:Import /tsn:yourserver.database.windows.net /tdn:Schedule8Data /sf:Schedule8Data.bacpac /tu:USER /tp:PASSWORD
+pg_dump -Fc -h <source> -U arms_app arms > arms.dump      # everything, including accounts
+pg_restore -h <target> -U arms_app -d arms --no-owner arms.dump
 ```
 
-Two things change if you go that way: **cross-database queries do not work on Azure SQL**, and this
-backend uses them everywhere (`[DB_REGISTRY].dbo.Organisation` from inside the data database). All
-three databases would have to become schemas in one database, and `db.js` adjusted to match — it is
-the one place that builds those names, so it is a contained change, but it is not zero. Raise it
-before choosing PaaS.
+Move the dump out of band — SFTP, or a private blob container with a short-lived link. Not by
+e-mail, and not into this repository.
 
----
+ARMS reads from 2022 by configuration (`ARMS_FROM_YEAR`), so the earlier years are excluded from the
+reporting but remain in the database.
+
+Text in every schema is **case-insensitive** (`public.arms_ci`, created by the schema file), as it
+was in SQL Server and MySQL: the disease names in eleven years of returns do not agree on
+capitalisation, and grouping them must not split one condition in two. Two consequences: `LIKE` and
+regular expressions cannot run in that collation, so the code that uses them says `COLLATE "C"`;
+and comparisons do not ignore trailing spaces the way SQL Server's did, which the disease map's
+trailing-space rules already handle.
 
 ## The URLs
 
@@ -383,9 +325,10 @@ figures already on screen survive without JavaScript; script only adds new rows.
 
 ---
 
-## Two changes made to the recovered database
+## Changes made to the recovered database
 
-Both are in `src/auth/schema.js`, both reported every time `init-db` runs.
+The first two are in `src/auth/schema.js` and reported every time `init-db` runs; the third is in
+`deploy/postgres/legacy-schema.sql`.
 
 **1. `FDI_Item` widened from `varchar(50)` to `varchar(100)`.**
 `Porcine Reproductive and Respiratory Syndrome (PRRS)` is 52 characters and is an official
@@ -394,22 +337,21 @@ and a controlled disease that does not match its own name never gets counted. Th
 eleven years of existing data is 33 characters, so nothing already recorded is affected. The
 handover names this explicitly: *"Widen the column before any new capture path writes to it."*
 
-**2. The 2016 notification trigger — a decision, not a workaround.**
-`dbo.FormData` carries `trig_FormData_CheckNotifiableDeseases`, which fires on approval and sends a
-controlled-disease notification through `sp_SendMail`. It writes `NAHDIS_FSA..regions` **literally**,
-so that name does not follow `DB_REGISTRY`. On this machine, where the registry is restored as
-`NAHDIS_FSA_ARMS` and an unrelated empty database happens to be called `NAHDIS_FSA`, the trigger
-bound silently to the empty one — and once the app login could not reach it, **every approval
-failed**.
+**2. The 2016 notification trigger is gone.**
+In SQL Server, `FormData` carried `trig_FormData_CheckNotifiableDeseases`, which fired on approval and
+sent a controlled-disease notification through `sp_SendMail` — writing `NAHDIS_FSA..regions`
+literally, which is why it broke whenever the databases were restored under other names.
+`sp_SendMail` has no Postgres counterpart and the trigger did not come across. `init-db` checks and
+says so. **Controlled-disease notification is therefore sent by nothing — ARMS does not yet send
+it either. That is a real gap, printed on every run rather than buried.**
 
-`LEGACY_NOTIFY_TRIGGER` decides what happens: `leave` (default) keeps it exactly as it is, `disable`
-turns it off on this copy so approvals work. This machine's `.env` says `disable`, with the reason
-recorded. **Controlled-disease notification is therefore sent by nothing — ARMS does not yet send
-it either. That is a real gap, printed on every run rather than buried.** Re-enabling is one
-statement: `ALTER TABLE dbo.FormData ENABLE TRIGGER ALL`.
+**3. The return ids number themselves.** `FormData.FRMD_Id`, `FormDataItems.FDI_Id` and
+`FormDataItemParts.DIP_ID` are identity columns. They were in SQL Server; the MySQL copy lost it, so
+capturing a return there failed on the first insert. Existing ids are kept as they were.
 
-Everything else ARMS adds lives in its own `arms` schema — `AppUser`, `Session`, `AuditLog` — plus
-three lookup indexes. Nothing in `dbo` is dropped, renamed or repurposed.
+Everything else ARMS adds lives in its own `arms` schema — `AppUser`, `Session`, `AuditLog`,
+`Question`, `Setting`, `RcProvince` — plus three lookup indexes. Nothing in the recovered tables is
+dropped, renamed or repurposed.
 
 ---
 
@@ -445,9 +387,9 @@ Three things had to be matched exactly, each found by that comparison failing:
   `Dead on arrival` and `Dead on Arrival` counted as two conditions.
 - **The disease map's keys must not be trimmed.** Two rules exist *only* to catch a trailing space
   — `"Lumpy Skin Disease "` and `"Bovine Leukosis "`. A tidy-up `.trim()` deleted both.
-- **The connection must open inside the data database.** The restored databases collate
-  `Latin1_General_CI_AS` and `master` does not, so the register query dies on a collation conflict
-  from anywhere else.
+- **Text must compare without regard to case.** SQL Server's `Latin1_General_CI_AS` grouped
+  `Dead on arrival` with `Dead on Arrival` before the code ever saw them. In Postgres that is the
+  `arms_ci` collation on every text column; without it the fact rows split.
 
 Every query now carries an explicit `ORDER BY`. Which spelling survives depends on which row SQL
 returns first, and a national disease list that changes spellings between two identical runs is not
@@ -479,7 +421,9 @@ evidence.
 |---|---|
 | `src/server.js` | Routes, home page, error pages, startup |
 | `src/config.js` | Every setting, resolved from `.env` in one place |
-| `src/db.js` | Pool, bound-parameter `sql` tag, transactions, three-part names from config |
+| `src/db.js` | Pool, bound-parameter `sql` tag, transactions, schema-qualified names from config, column spellings restored |
+| `src/pg-names.js` | Every column name as the code spells it — Postgres folds them to lower case |
+| `deploy/postgres/legacy-schema.sql` | The recovered tables and `getprovince()`, for an empty database |
 | `src/explorer-data.js` | The port of `extract-data.ps1` — five fact sets and the register |
 | `src/form-definition.js` | The Schedule 8 form and abattoir list, from the form tables |
 | `src/disease-map.js` | Reads `disease-name-map.csv`, including the `=KEEP=` guard |

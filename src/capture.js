@@ -27,7 +27,7 @@
  * because only 'Approved' counts, and the history stays complete because
  * nothing was removed to achieve that.
  */
-import { sql, query, raw, withTransaction, D } from './db.js';
+import { sql, query, raw, withTransaction, D, SA_NOW } from './db.js';
 import { config } from './config.js';
 import { validateReturn, PERIOD_RE, periodStart, periodEnd } from './validate-return.js';
 
@@ -141,14 +141,14 @@ function shapeReturn(r) {
 /* The column list, optionally qualified with a table alias.
  *
  * Built by naming the columns rather than by splitting a string on commas -
- * DATE_FORMAT(FRMD_StartDate, '%Y-%m') contains two commas of its own, and
+ * to_char(FRMD_StartDate, 'YYYY-MM') contains two commas of its own, and
  * splitting on them produced `f.120) AS Period`, which SQL Server reported as
  * "Incorrect syntax near '.120'". */
 function returnCols(alias = '') {
   const a = alias ? `${alias}.` : '';
   return [
     `${a}FRMD_Id`, `${a}ORG_ID`, `${a}ORG_Name`, `${a}FRMD_Status`, `${a}FRMD_Revision`,
-    `DATE_FORMAT(${a}FRMD_StartDate, '%Y-%m') AS Period`,
+    `to_char(${a}FRMD_StartDate, 'YYYY-MM') AS Period`,
     `${a}FRMD_UserName`, `${a}USR_ID`, `${a}FRMD_AprrovedUserName`, `${a}FRMD_ApprovedDate`,
     `${a}FRMD_FormNotes`, `${a}FRMD_NoSlaughter`, `${a}FRMD_NoSlaughterReason`,
   ].join(', ');
@@ -158,9 +158,9 @@ const RETURN_COLS = returnCols();
 
 export async function getReturn(frmdId) {
   /* /returns/notanumber put Number('notanumber') - NaN - into the query, and a
-   * NaN reaches MySQL as the bare word NaN, which it reads as a column name:
-   * "Unknown column 'NaN' in 'where clause'". That is a 500 where the honest
-   * answer is 404. Nothing hostile ever got through - Number() admits only a
+   * NaN reached the database as the bare word NaN, which MySQL read as a
+   * column name: "Unknown column 'NaN' in 'where clause'". That is a 500 where
+   * the honest answer is 404. Nothing hostile ever got through - Number() admits only a
    * number or NaN - but an id that is not a whole positive number is not an
    * id, and saying so here answers for every caller at once: the page route,
    * and approve, send-back and revise, which all load through this and already
@@ -178,7 +178,7 @@ export async function findReturn(orgId, period) {
 SELECT ${raw(RETURN_COLS)}
 FROM FormData
 WHERE ORG_ID = ${Number(orgId)}
-  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${period}
+  AND to_char(FRMD_StartDate, 'YYYY-MM') = ${period}
   AND FRMD_Status <> ${STATUS.SUPERSEDED}
 ORDER BY FRMD_Revision DESC`;
   return rows.length ? shapeReturn(rows[0]) : null;
@@ -189,7 +189,7 @@ export async function returnHistory(orgId, period) {
 SELECT ${raw(RETURN_COLS)}
 FROM FormData
 WHERE ORG_ID = ${Number(orgId)}
-  AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${period}
+  AND to_char(FRMD_StartDate, 'YYYY-MM') = ${period}
 ORDER BY FRMD_Revision DESC, FRMD_Id DESC`;
   return rows.map(shapeReturn);
 }
@@ -212,7 +212,7 @@ FROM FormData f
 WHERE f.FRMD_Status <> ${STATUS.SUPERSEDED}
   ${raw(scope)}
   AND (${status === null ? raw('1=1') : raw('f.FRMD_Status = ')}${status === null ? raw('') : status})
-  AND (${period === null ? raw('1=1') : raw("DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') = ")}${period === null ? raw('') : period})
+  AND (${period === null ? raw('1=1') : raw("to_char(f.FRMD_StartDate, 'YYYY-MM') = ")}${period === null ? raw('') : period})
 ORDER BY f.FRMD_StartDate DESC, f.ORG_Name
                   LIMIT ${Number(limit)}`).map(shapeReturn);
 }
@@ -244,7 +244,7 @@ export async function missingReturns({ orgIds, period }) {
     : `AND o.ORG_ID IN (${orgIds.length ? orgIds.map((n) => Number(n) || -1).join(',') : '-1'})`;
 
   return sql`
-SELECT o.ORG_ID, o.ORG_Name, LTRIM(RTRIM(IFNULL(a.ABA_RegistrationNumber,''))) AS RC
+SELECT o.ORG_ID, o.ORG_Name, LTRIM(RTRIM(COALESCE(a.ABA_RegistrationNumber,''))) AS RC
 FROM ${raw(D.registry('Organisation'))} o
 JOIN ${raw(D.registry('AbattoirMaster'))} a ON a.ORG_ID = o.ORG_ID
 WHERE o.ORG_Active = 1
@@ -252,9 +252,9 @@ WHERE o.ORG_Active = 1
   AND NOT EXISTS (
     SELECT 1 FROM FormData f
      WHERE f.ORG_ID = o.ORG_ID
-       AND DATE_FORMAT(f.FRMD_StartDate, '%Y-%m') = ${period}
+       AND to_char(f.FRMD_StartDate, 'YYYY-MM') = ${period}
        AND f.FRMD_Status <> ${STATUS.SUPERSEDED})
-ORDER BY o.ORG_Name`;
+ORDER BY o.ORG_Name, o.ORG_ID, RC`;
 }
 
 /* The captured detail of one return, in the phone app's payload shape - so the
@@ -323,9 +323,9 @@ async function orgName(orgId) {
  * rather than accumulating duplicates. Approved rows are never touched by
  * this - a correction goes through reviseReturn and gets its own FRMD_Id. */
 async function writeItems(t, frmdId, usrId, payload, form) {
-  await t.sql`DELETE p FROM FormDataItemParts p
-              JOIN FormDataItems i ON i.FDI_Id = p.FDI_ID
-              WHERE i.FRMD_ID = ${Number(frmdId)}`;
+  await t.sql`DELETE FROM FormDataItemParts p
+              USING FormDataItems i
+              WHERE i.FDI_Id = p.FDI_ID AND i.FRMD_ID = ${Number(frmdId)}`;
   await t.sql`DELETE FROM FormDataItems WHERE FRMD_ID = ${Number(frmdId)}`;
 
   if (payload.noSlaughter) return { items: 0, parts: 0 };
@@ -364,7 +364,8 @@ INSERT INTO FormDataItems
 VALUES (${resolved.parentId}, ${resolved.parentName}, ${resolved.subId}, ${resolved.subName},
         ${resolved.itemId ?? 0}, ${(resolved.itemName || name).slice(0, 100)},
         ${String(it.specie || '').slice(0, 10)}, ${value.slice(0, 10)},
-        ${it.notes ? String(it.notes) : null}, '1', ${Number(frmdId)}, ${Number(usrId)})`;
+        ${it.notes ? String(it.notes) : null}, '1', ${Number(frmdId)}, ${Number(usrId)})
+RETURNING FDI_Id`;
 
     nItems++;
     const fdiId = Number(insertId);
@@ -429,7 +430,8 @@ VALUES (${config.arms.formId}, 1, ${orgId}, ${name}, ${status},
         ${periodStart(period)}, ${periodEnd(period)},
         ${Number(user.legacyUsrId ?? user.userId)}, ${inspector},
         ${payload.notes || null}, ${payload.noSlaughter ? 1 : 0},
-        ${payload.noSlaughterReason || null})`;
+        ${payload.noSlaughterReason || null})
+RETURNING FRMD_Id`;
       frmdId = Number(insertId);
     } else {
       await t.sql`
@@ -489,15 +491,15 @@ export async function approveReturn({ frmdId, user }) {
   return withTransaction(async (t) => {
     /* The affected-row count, not a returned row.
      *
-     * MySQL reports rows CHANGED rather than rows matched, which is exactly
-     * what is wanted here: the WHERE re-checks FRMD_Status, so of two managers
-     * approving at once the first changes one row and the second changes none.
-     * A count of anything other than 1 means somebody got there first. */
+     * The WHERE re-checks FRMD_Status, so of two managers approving at once the
+     * first matches one row and the second - held on the row lock until the
+     * first commits, then re-reading it - matches none. A count of anything
+     * other than 1 means somebody got there first. */
     const done = await t.run`
 UPDATE FormData
    SET FRMD_Status = ${STATUS.APPROVED},
        FRMD_AprrovedUserName = ${String(user.fullName).slice(0, 100)},
-       FRMD_ApprovedDate = NOW()
+       FRMD_ApprovedDate = ${raw(SA_NOW)}   -- wall-clock SAST, like every older row
  WHERE FRMD_Id = ${Number(frmdId)} AND FRMD_Status = ${STATUS.SUBMITTED}`;
 
     if (done.affectedRows !== 1) {
@@ -513,7 +515,7 @@ UPDATE FormData
 UPDATE FormData
    SET FRMD_Status = ${STATUS.SUPERSEDED}
  WHERE ORG_ID = ${Number(ret.orgId)}
-   AND DATE_FORMAT(FRMD_StartDate, '%Y-%m') = ${ret.period}
+   AND to_char(FRMD_StartDate, 'YYYY-MM') = ${ret.period}
    AND FRMD_Id <> ${Number(frmdId)}
    AND FRMD_Status = ${STATUS.APPROVED}`;
     }
@@ -530,13 +532,16 @@ export async function sendBack({ frmdId, user, reason }) {
   if (ret.status !== STATUS.SUBMITTED) throw new Error(`Only a submitted return can be sent back. This one is ${ret.status}.`);
   if (!String(reason || '').trim()) throw new Error('Say why it is going back — the inspector has to know what to fix.');
 
+  /* Appended with ||. The SQL Server original used +, which the MySQL port
+   * kept - and in MySQL + is arithmetic, so sending a return back replaced its
+   * notes with 0. */
   const stamp = `[sent back by ${user.fullName} on ${new Date().toISOString().slice(0, 10)}] ${String(reason).trim()}`;
   await sql`
 UPDATE FormData
    SET FRMD_Status = ${STATUS.IN_PROGRESS},
-       FRMD_FormNotes = CASE WHEN FRMD_FormNotes IS NULL OR CAST(FRMD_FormNotes AS CHAR) = ''
+       FRMD_FormNotes = CASE WHEN COALESCE(FRMD_FormNotes, '') = ''
                              THEN ${stamp}
-                             ELSE CAST(FRMD_FormNotes AS CHAR) + CHAR(10) + ${stamp} END
+                             ELSE FRMD_FormNotes || chr(10) || ${stamp} END
  WHERE FRMD_Id = ${Number(frmdId)} AND FRMD_Status = ${STATUS.SUBMITTED}`;
 
   return getReturn(frmdId);
@@ -569,7 +574,8 @@ VALUES (${config.arms.formId}, ${ret.revision + 1}, ${ret.orgId}, ${ret.orgName}
         ${STATUS.IN_PROGRESS}, ${periodStart(ret.period)}, ${periodEnd(ret.period)},
         ${Number(user.legacyUsrId ?? user.userId)}, ${String(user.fullName).slice(0, 100)},
         ${`${ret.notes ? `${ret.notes}\n` : ''}${stamp}`},
-        ${ret.noSlaughter ? 1 : 0}, ${ret.noSlaughterReason || null})`;
+        ${ret.noSlaughter ? 1 : 0}, ${ret.noSlaughterReason || null})
+RETURNING FRMD_Id`;
 
     const newId = Number(insertId);
     await writeItems(t, newId, Number(user.legacyUsrId ?? user.userId), {

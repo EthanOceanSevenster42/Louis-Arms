@@ -19,6 +19,20 @@
  */
 import { scopeLabel, ROLE_LABEL } from './auth/users.js';
 
+/* A time as people here read it: South African, to the minute (or second).
+ * ARMS's own timestamps arrive as Dates; the recovered data's arrive as the
+ * wall-clock text they were stored as, already South African. */
+const SA_TIME = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+});
+
+export function when(v, { seconds = false, dateOnly = false } = {}) {
+  if (v === null || v === undefined || v === '') return '';
+  const text = v instanceof Date ? SA_TIME.format(v) : String(v).replace('T', ' ');
+  return text.slice(0, dateOnly ? 10 : seconds ? 19 : 16);
+}
+
 export function esc(s) {
   return String(s === null || s === undefined ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

@@ -104,12 +104,12 @@ function setPath(obj, path, value) {
 export async function ensureSettingsTables(log = () => {}) {
   await exec`
 CREATE TABLE IF NOT EXISTS arms.Setting (
-  Name        VARCHAR(64)  NOT NULL PRIMARY KEY,
+  Name        VARCHAR(64)  COLLATE public.arms_ci NOT NULL PRIMARY KEY,
   Value       VARCHAR(500) NOT NULL,
   Description VARCHAR(600) NULL,
-  UpdatedAt   DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
+  UpdatedAt   TIMESTAMPTZ(0) NOT NULL DEFAULT now(),
   UpdatedBy   VARCHAR(64)  NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`;
+)`;
 
   /* The RC number's first digit encodes the province, and that mapping is also
    * the scope of an admin's authority - see the note at the top of rc.js. It is
@@ -117,24 +117,24 @@ CREATE TABLE IF NOT EXISTS arms.Setting (
    * register can disagree with it. One row per digit, one place to change. */
   await exec`
 CREATE TABLE IF NOT EXISTS arms.RcProvince (
-  Digit    CHAR(1)     NOT NULL PRIMARY KEY,
-  Province VARCHAR(40) NOT NULL,
-  UpdatedAt DATETIME   NOT NULL DEFAULT (UTC_TIMESTAMP())
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`;
+  Digit     VARCHAR(1)   NOT NULL PRIMARY KEY,
+  Province  VARCHAR(40)  COLLATE public.arms_ci NOT NULL,
+  UpdatedAt TIMESTAMPTZ(0) NOT NULL DEFAULT now()
+)`;
 
   for (const t of TUNABLES) {
     const current = getPath(config, t.path);
     await exec`
 INSERT INTO arms.Setting (Name, Value, Description, UpdatedBy)
 VALUES (${t.name}, ${String(current)}, ${t.description}, 'seed')
-ON DUPLICATE KEY UPDATE Description = VALUES(Description)`;
+ON CONFLICT (Name) DO UPDATE SET Description = EXCLUDED.Description`;
   }
   log(`    ok  arms.Setting (${TUNABLES.length} tunables)`);
 
   for (const [digit, province] of Object.entries(RC_PROV)) {
     await exec`
 INSERT INTO arms.RcProvince (Digit, Province) VALUES (${digit}, ${province})
-ON DUPLICATE KEY UPDATE Province = VALUES(Province)`;
+ON CONFLICT (Digit) DO UPDATE SET Province = EXCLUDED.Province`;
   }
   const [{ n }] = await sql`SELECT COUNT(*) AS n FROM arms.RcProvince`;
   log(`    ok  arms.RcProvince (${n} provinces)`);
@@ -189,8 +189,8 @@ export async function putSetting(name, value, updatedBy = null) {
   await exec`
 INSERT INTO arms.Setting (Name, Value, Description, UpdatedBy)
 VALUES (${name}, ${String(value)}, ${t.description}, ${updatedBy})
-ON DUPLICATE KEY UPDATE Value = VALUES(Value), UpdatedBy = VALUES(UpdatedBy),
-                        UpdatedAt = UTC_TIMESTAMP()`;
+ON CONFLICT (Name) DO UPDATE SET Value = EXCLUDED.Value, UpdatedBy = EXCLUDED.UpdatedBy,
+                                 UpdatedAt = now()`;
   setPath(config, t.path, parsed);
   return parsed;
 }

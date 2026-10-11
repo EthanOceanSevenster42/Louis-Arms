@@ -171,7 +171,10 @@ export async function authenticate(username, password) {
     return { ok: false, reason: 'disabled' };
   }
 
-  if (user.lockedUntil && new Date(`${user.lockedUntil}Z`) > new Date()) {
+  /* lockedUntil is a Date (TIMESTAMPTZ, see db.js). The MySQL port appended a
+   * "Z" to it, which made an Invalid Date - and an invalid date is never later
+   * than now, so the five-attempt lock was never enforced. */
+  if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
     return { ok: false, reason: 'locked', until: user.lockedUntil };
   }
 
@@ -183,7 +186,7 @@ export async function authenticate(username, password) {
     if (lock) {
       await sql`UPDATE arms.AppUser
                    SET FailedAttempts = ${attempts},
-                       LockedUntil = DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${LOCK_MINUTES} MINUTE)
+                       LockedUntil = now() + make_interval(mins => ${LOCK_MINUTES})
                  WHERE UserId = ${user.userId}`;
     } else {
       await sql`UPDATE arms.AppUser SET FailedAttempts = ${attempts}, LockedUntil = NULL
@@ -202,11 +205,11 @@ export async function authenticate(username, password) {
     const fresh = await hashPassword(String(password));
     await sql`UPDATE arms.AppUser
                  SET PasswordHash = ${fresh}, FailedAttempts = 0, LockedUntil = NULL,
-                     LastLoginAt = UTC_TIMESTAMP()
+                     LastLoginAt = now()
                WHERE UserId = ${user.userId}`;
   } else {
     await sql`UPDATE arms.AppUser
-                 SET FailedAttempts = 0, LockedUntil = NULL, LastLoginAt = UTC_TIMESTAMP()
+                 SET FailedAttempts = 0, LockedUntil = NULL, LastLoginAt = now()
                WHERE UserId = ${user.userId}`;
   }
 

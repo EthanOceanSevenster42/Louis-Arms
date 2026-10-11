@@ -1,39 +1,22 @@
 /* The tables ARMS adds, and the one legacy column it has to widen.
  *
- * MySQL has no schema layer inside a database, so what was the `arms` schema in
- * SQL Server is its own database here, named `arms`. Every reference in the code
- * is already written `arms.AppUser`, which reads correctly either way.
+ * ARMS's own tables live in the `arms` schema, beside the three schemas that
+ * hold the recovered data. Every reference in the code is written
+ * `arms.AppUser`, which Postgres reads as schema arms, table appuser.
  *
  * Nothing in the recovered data is dropped, renamed or repurposed - those tables
  * are an eleven-year evidential record and this sits beside them, clearly marked
  * as new. Running this twice is safe.
+ *
+ * The recovered tables themselves are created by deploy/postgres/legacy-schema.sql,
+ * not here: they are the data's shape, not ARMS's, and they are loaded once.
  */
 import { query, sql, db } from '../db.js';
 import { config } from '../config.js';
 import { ensureSettingsTables } from '../settings.js';
 
-const DATA = () => config.databases.data;
+const DATA = () => db(config.databases.data);
 const ARMS = 'arms';
-
-/* MySQL has no CREATE INDEX IF NOT EXISTS, so the catalogue is asked first.
- * Creating an index that already exists is an error, not a no-op, and this
- * migration has to stay safe to re-run. */
-async function indexExists(schema, table, name) {
-  const [row] = await sql`
-SELECT COUNT(*) AS n
-FROM information_schema.STATISTICS
-WHERE TABLE_SCHEMA = ${schema} AND TABLE_NAME = ${table} AND INDEX_NAME = ${name}`;
-  return Number(row?.n || 0) > 0;
-}
-
-async function createIndex(schema, table, name, definition, log) {
-  if (await indexExists(schema, table, name)) {
-    log(`    ok  ${name} (already present)`);
-    return;
-  }
-  await query(`CREATE INDEX \`${name}\` ON ${db(schema)}.\`${table}\` ${definition}`);
-  log(`    ok  ${name}`);
-}
 
 /* ---------------------------------------------------------------------------
  * THE ONE LEGACY CHANGE: FDI_Item varchar(50) -> varchar(100).
@@ -50,40 +33,27 @@ async function createIndex(schema, table, name, definition, log) {
  * ------------------------------------------------------------------------- */
 async function widenItemColumn() {
   const [col] = await sql`
-SELECT CHARACTER_MAXIMUM_LENGTH AS len, IS_NULLABLE AS nullable, COLUMN_TYPE AS coltype
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = ${DATA()} AND TABLE_NAME = 'FormDataItems' AND COLUMN_NAME = 'FDI_Item'`;
+SELECT character_maximum_length AS len
+FROM information_schema.columns
+WHERE table_schema = ${DATA()} AND table_name = 'formdataitems' AND column_name = 'fdi_item'`;
 
   if (!col) {
     /* The column is missing. That is either a staged deployment where the
-     * recovered data has not been restored yet, or DB_DATA pointing at the
-     * wrong database - and those need opposite responses, so tell them apart
-     * rather than guessing. An empty database is the first; a database full of
-     * other people's tables is the second. */
+     * recovered data has not been loaded yet, or DB_DATA pointing at the wrong
+     * schema - and those need opposite responses, so tell them apart rather
+     * than guessing. An empty schema is the first; a schema full of other
+     * people's tables is the second. */
     const [any] = await sql`
-SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = ${DATA()}`;
+SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = ${DATA()}`;
     if (Number(any?.n || 0) === 0) return { changed: false, from: null, absent: true };
-    throw new Error('FormDataItems.FDI_Item not found - is DB_DATA the right database?');
+    throw new Error('FormDataItems.FDI_Item not found - is DB_DATA the right schema?');
   }
   const len = col.len === null ? -1 : Number(col.len);
   if (len >= 100 || len === -1) return { changed: false, from: len };
 
-  /* An index on the column would have to be dropped and rebuilt; refuse rather
-   * than silently reshape somebody's index. There is none today. */
-  const [idx] = await sql`
-SELECT COUNT(*) AS n
-FROM information_schema.STATISTICS
-WHERE TABLE_SCHEMA = ${DATA()} AND TABLE_NAME = 'FormDataItems' AND COLUMN_NAME = 'FDI_Item'`;
-  if (Number(idx.n) > 0) {
-    throw new Error(
-      'FDI_Item is part of an index. Widening it needs that index dropped and rebuilt - ' +
-      'do it deliberately rather than as a side effect of starting the backend.'
-    );
-  }
-
-  await query(
-    `ALTER TABLE ${db(DATA())}.\`FormDataItems\` MODIFY COLUMN FDI_Item VARCHAR(100) NOT NULL`
-  );
+  /* Postgres widens a varchar in place, index or not, and never rewrites the
+   * values - so unlike MySQL there is nothing here to refuse. */
+  await query(`ALTER TABLE ${DATA()}.formdataitems ALTER COLUMN fdi_item TYPE VARCHAR(100)`);
   return { changed: true, from: len };
 }
 
@@ -91,112 +61,113 @@ WHERE TABLE_SCHEMA = ${DATA()} AND TABLE_NAME = 'FormDataItems' AND COLUMN_NAME 
  * ARMS's own tables.
  *
  * Types, translated from the SQL Server original:
- *   nvarchar(n)  -> VARCHAR(n)   (the database is utf8mb4, so every column is
+ *   nvarchar(n)  -> VARCHAR(n)   (the database is UTF-8, so every column is
  *                                 already Unicode; nvarchar has no counterpart)
  *   nvarchar(max)-> TEXT
- *   bit          -> TINYINT(1)
- *   datetime2(0) -> DATETIME     (second precision, same as the original)
- *   IDENTITY(1,1)-> AUTO_INCREMENT
+ *   bit          -> SMALLINT     (0 and 1, read as numbers, as before)
+ *   datetime2(0) -> TIMESTAMPTZ(0) (second precision; an instant, not a wall
+ *                                   clock - the recovered tables keep theirs)
+ *   IDENTITY(1,1)-> GENERATED BY DEFAULT AS IDENTITY
+ *
+ * Text is case-insensitive (public.arms_ci, created by legacy-schema.sql), as
+ * it was in SQL Server and MySQL: a username is one username whatever the
+ * capitalisation it was typed in.
  * ------------------------------------------------------------------------- */
+const CI = 'COLLATE public.arms_ci';
+
 const STATEMENTS = [
-  [`the arms database`, `CREATE DATABASE IF NOT EXISTS \`${ARMS}\`
-     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`],
+  [`the arms schema`, `CREATE SCHEMA IF NOT EXISTS ${ARMS}`],
+
+  [`case-insensitive collation`, `CREATE COLLATION IF NOT EXISTS public.arms_ci
+     (provider = icu, locale = 'und-u-ks-level2', deterministic = false)`],
 
   /* A user is scoped to an abattoir, an admin to a province, a super user to
    * the country. Both scopes already exist in the data - the abattoir's ORG_ID
    * and the province derived from its RC number - so no new hierarchy is
    * needed, exactly as the specification says. */
   [`arms.AppUser`, `
-CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`AppUser\` (
-  UserId             INT AUTO_INCREMENT PRIMARY KEY,
-  Username           VARCHAR(64)  NOT NULL UNIQUE,
-  FullName           VARCHAR(120) NOT NULL,
-  Email              VARCHAR(160) NULL,
+CREATE TABLE IF NOT EXISTS ${ARMS}.AppUser (
+  UserId             INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  Username           VARCHAR(64)  ${CI} NOT NULL UNIQUE,
+  FullName           VARCHAR(120) ${CI} NOT NULL,
+  Email              VARCHAR(160) ${CI} NULL,
   PasswordHash       VARCHAR(400) NOT NULL,
   -- 'user' = inspector at one abattoir, 'admin' = regional manager for one
   -- province, 'super' = national. Capture and approval are never the same
   -- person, which is why these are layers and not flags on one role.
-  Role               VARCHAR(10)  NOT NULL,
-  ScopeOrgId         INT          NULL,      -- set for 'user'
-  ScopeProvince      VARCHAR(40)  NULL,      -- set for 'admin'
-  IsActive           TINYINT(1)   NOT NULL DEFAULT 1,
-  MustChangePassword TINYINT(1)   NOT NULL DEFAULT 1,
-  FailedAttempts     INT          NOT NULL DEFAULT 0,
-  LockedUntil        DATETIME     NULL,
-  LegacyUsrId        INT          NULL,      -- NAHDIS_FSA.Users.Id, for attribution
-  CreatedAt          DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
-  CreatedBy          VARCHAR(64)  NULL,
-  LastLoginAt        DATETIME     NULL,
+  Role               VARCHAR(10)  ${CI} NOT NULL,
+  ScopeOrgId         INTEGER      NULL,      -- set for 'user'
+  ScopeProvince      VARCHAR(40)  ${CI} NULL, -- set for 'admin'
+  IsActive           SMALLINT     NOT NULL DEFAULT 1,
+  MustChangePassword SMALLINT     NOT NULL DEFAULT 1,
+  FailedAttempts     INTEGER      NOT NULL DEFAULT 0,
+  LockedUntil        TIMESTAMPTZ(0) NULL,
+  LegacyUsrId        INTEGER      NULL,      -- NAHDIS_FSA.Users.Id, for attribution
+  CreatedAt          TIMESTAMPTZ(0) NOT NULL DEFAULT now(),
+  CreatedBy          VARCHAR(64)  ${CI} NULL,
+  LastLoginAt        TIMESTAMPTZ(0) NULL,
   CONSTRAINT CK_AppUser_Role CHECK (Role IN ('user','admin','super')),
   -- The scope must match the layer. An admin with an abattoir scope, or a user
   -- with none, is a permission bug waiting to happen; the database refuses it.
-  -- MySQL enforces CHECK constraints from 8.0.16; on anything older these are
-  -- parsed and ignored, which is why scope.js checks in code as well.
   CONSTRAINT CK_AppUser_Scope CHECK (
         (Role = 'user'  AND ScopeOrgId IS NOT NULL AND ScopeProvince IS NULL)
      OR (Role = 'admin' AND ScopeOrgId IS NULL     AND ScopeProvince IS NOT NULL)
      OR (Role = 'super' AND ScopeOrgId IS NULL     AND ScopeProvince IS NULL)
   )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
+)`],
 
   /* Sessions live in the database rather than only in a signed cookie, so that
    * access can actually be revoked - a super user removing an account must end
    * that person's session, not wait for a cookie to expire. */
   [`arms.Session`, `
-CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`Session\` (
-  SessionId   INT AUTO_INCREMENT PRIMARY KEY,
-  TokenHash   CHAR(64)     NOT NULL UNIQUE,   -- SHA-256 of the cookie value
-  UserId      INT          NOT NULL,
-  CreatedAt   DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
-  ExpiresAt   DATETIME     NOT NULL,
-  LastSeenAt  DATETIME     NULL,
-  RevokedAt   DATETIME     NULL,
+CREATE TABLE IF NOT EXISTS ${ARMS}.Session (
+  SessionId   INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  TokenHash   VARCHAR(64)  NOT NULL UNIQUE,   -- SHA-256 of the cookie value
+  UserId      INTEGER      NOT NULL REFERENCES ${ARMS}.AppUser (UserId),
+  CreatedAt   TIMESTAMPTZ(0) NOT NULL DEFAULT now(),
+  ExpiresAt   TIMESTAMPTZ(0) NOT NULL,
+  LastSeenAt  TIMESTAMPTZ(0) NULL,
+  RevokedAt   TIMESTAMPTZ(0) NULL,
   IpAddress   VARCHAR(64)  NULL,
-  UserAgent   VARCHAR(300) NULL,
-  CONSTRAINT FK_Session_User FOREIGN KEY (UserId)
-    REFERENCES \`${ARMS}\`.\`AppUser\` (UserId)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
+  UserAgent   VARCHAR(300) NULL
+)`],
 
   /* "Assume audit from the start. Who saw what matters less than who CHANGED
    * what, but a disease investigation may ask both." */
   [`arms.AuditLog`, `
-CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`AuditLog\` (
-  AuditId    BIGINT AUTO_INCREMENT PRIMARY KEY,
-  At         DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
-  UserId     INT          NULL,
-  Username   VARCHAR(64)  NULL,
-  Action     VARCHAR(40)  NOT NULL,
-  EntityType VARCHAR(30)  NULL,
-  EntityId   VARCHAR(60)  NULL,
+CREATE TABLE IF NOT EXISTS ${ARMS}.AuditLog (
+  AuditId    BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  At         TIMESTAMPTZ(0) NOT NULL DEFAULT now(),
+  UserId     INTEGER      NULL,
+  Username   VARCHAR(64)  ${CI} NULL,
+  Action     VARCHAR(40)  ${CI} NOT NULL,
+  EntityType VARCHAR(30)  ${CI} NULL,
+  EntityId   VARCHAR(60)  ${CI} NULL,
   Detail     TEXT         NULL,
   IpAddress  VARCHAR(64)  NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
+)`],
 
   /* A question the "Ask it something" tab's canned list did not answer.
    * Anyone signed in may ask one; only a super user may answer it - the same
    * layer that already holds the register and the disease list. */
   [`arms.Question`, `
-CREATE TABLE IF NOT EXISTS \`${ARMS}\`.\`Question\` (
-  QuestionId       INT AUTO_INCREMENT PRIMARY KEY,
-  AskedByUserId    INT          NOT NULL,
-  AskedByName      VARCHAR(120) NOT NULL,
+CREATE TABLE IF NOT EXISTS ${ARMS}.Question (
+  QuestionId       INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  AskedByUserId    INTEGER      NOT NULL REFERENCES ${ARMS}.AppUser (UserId),
+  AskedByName      VARCHAR(120) ${CI} NOT NULL,
   QuestionText     TEXT         NOT NULL,
-  Status           VARCHAR(10)  NOT NULL DEFAULT 'open',
+  Status           VARCHAR(10)  ${CI} NOT NULL DEFAULT 'open',
   AnswerText       TEXT         NULL,
-  AnsweredByUserId INT          NULL,
-  AnsweredByName   VARCHAR(120) NULL,
-  AnsweredAt       DATETIME     NULL,
-  CreatedAt        DATETIME     NOT NULL DEFAULT (UTC_TIMESTAMP()),
-  CONSTRAINT FK_Question_AskedBy FOREIGN KEY (AskedByUserId)
-    REFERENCES \`${ARMS}\`.\`AppUser\` (UserId),
+  AnsweredByUserId INTEGER      NULL,
+  AnsweredByName   VARCHAR(120) ${CI} NULL,
+  AnsweredAt       TIMESTAMPTZ(0) NULL,
+  CreatedAt        TIMESTAMPTZ(0) NOT NULL DEFAULT now(),
   CONSTRAINT CK_Question_Status CHECK (Status IN ('open','answered'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`],
+)`],
 ];
 
-/* Indexes are created separately because MySQL has no IF NOT EXISTS for them.
- * The SQL Server original used INCLUDE columns on the FormData index; MySQL has
- * no INCLUDE, so those columns join the key itself - same covering effect, at
- * the cost of a slightly wider index. */
+/* The SQL Server original used INCLUDE columns on the FormData index; the key
+ * here carries them instead - same covering effect, a slightly wider index. */
 const INDEXES = [
   [ARMS, 'Session', 'IX_Session_User', '(UserId, ExpiresAt)'],
   [ARMS, 'AuditLog', 'IX_Audit_At', '(At DESC)'],
@@ -216,27 +187,20 @@ const INDEXES = [
  * three-part names out literally (`NAHDIS_FSA..regions`), which is why it broke
  * whenever the databases were restored under other names.
  *
- * On MySQL that trigger does not exist unless somebody recreated it during the
- * data migration: sp_SendMail has no MySQL counterpart, so it almost certainly
- * was not carried across. This function therefore REPORTS what it finds rather
- * than changing anything.
- *
- * Two things differ from the SQL Server version and both matter:
- *   - MySQL has no DISABLE TRIGGER. The only way to stop one is to DROP it,
- *     which is destructive and irreversible without the definition. So
- *     LEGACY_NOTIFY_TRIGGER=disable is reported here, not acted on.
- *   - If no trigger is found, controlled-disease notification is sent by
- *     NOTHING. ARMS does not send it either. That is a real gap and is printed
- *     every run rather than buried.
+ * sp_SendMail has no Postgres counterpart and the trigger was not carried
+ * across, so this REPORTS what it finds rather than changing anything. If no
+ * trigger is found, controlled-disease notification is sent by NOTHING. ARMS
+ * does not send it either. That is a real gap and is printed every run rather
+ * than buried.
  * ------------------------------------------------------------------------- */
 async function handleLegacyTrigger(log) {
   const rows = await sql`
-SELECT TRIGGER_NAME AS name, ACTION_TIMING AS timing, EVENT_MANIPULATION AS event
-FROM information_schema.TRIGGERS
-WHERE EVENT_OBJECT_SCHEMA = ${DATA()} AND EVENT_OBJECT_TABLE = 'FormData'`;
+SELECT trigger_name AS name, action_timing AS timing, event_manipulation AS event
+FROM information_schema.triggers
+WHERE event_object_schema = ${DATA()} AND event_object_table = 'formdata'`;
 
   if (!rows.length) {
-    log('    no trigger on FormData (expected: sp_SendMail did not survive the move to MySQL)');
+    log('    no trigger on FormData (expected: sp_SendMail did not survive the move from SQL Server)');
     log('    NOTE: controlled-disease notification is sent by nothing.');
     log('          ARMS does not yet send it. This is a known gap, not a fix.');
     return;
@@ -245,23 +209,21 @@ WHERE EVENT_OBJECT_SCHEMA = ${DATA()} AND EVENT_OBJECT_TABLE = 'FormData'`;
   for (const t of rows) {
     log(`    found trigger ${t.name} (${t.timing} ${t.event}) on FormData`);
     if (config.arms.legacyNotifyTrigger === 'disable') {
-      log('          LEGACY_NOTIFY_TRIGGER=disable, but MySQL cannot disable a trigger.');
-      log(`          Drop it deliberately if that is what you want:`);
-      log(`            DROP TRIGGER \`${DATA()}\`.\`${t.name}\`;`);
-      log('          Save its definition first - a dropped trigger is gone.');
+      await query(`ALTER TABLE ${DATA()}.formdata DISABLE TRIGGER ${db(t.name)}`);
+      log('          disabled (LEGACY_NOTIFY_TRIGGER=disable). Re-enable with');
+      log(`            ALTER TABLE ${DATA()}.formdata ENABLE TRIGGER ${t.name};`);
     } else {
-      log('          left alone (LEGACY_NOTIFY_TRIGGER=leave). If it was ported from the');
-      log(`          original it may still reference NAHDIS_FSA literally rather than ${config.databases.registry}.`);
+      log('          left alone (LEGACY_NOTIFY_TRIGGER=leave).');
     }
   }
 }
 
 export async function migrate({ log = console.log } = {}) {
-  log('  migrating the data database...');
+  log('  migrating the data schema...');
 
   const widened = await widenItemColumn();
   if (widened.absent) {
-    log('    ' + config.databases.data + ' is empty - the recovered data has not been restored yet.');
+    log('    ' + config.databases.data + ' is empty - the recovered data has not been loaded yet.');
     log("    FDI_Item cannot be widened until it exists. ARMS's own tables are still created,");
     log('    so run this again after loading the data and before any capture.');
   } else {
@@ -278,13 +240,14 @@ export async function migrate({ log = console.log } = {}) {
   for (const [schema, table, name, definition] of INDEXES) {
     const target = schema ?? DATA();
     const [exists] = await sql`
-SELECT COUNT(*) AS n FROM information_schema.TABLES
-WHERE TABLE_SCHEMA = ${target} AND TABLE_NAME = ${table}`;
+SELECT COUNT(*) AS n FROM information_schema.tables
+WHERE table_schema = ${target} AND table_name = ${table.toLowerCase()}`;
     if (Number(exists?.n || 0) === 0) {
       log(`    skip ${name} - ${target}.${table} does not exist yet`);
       continue;
     }
-    await createIndex(target, table, name, definition, log);
+    await query(`CREATE INDEX IF NOT EXISTS ${name} ON ${target}.${table} ${definition}`);
+    log(`    ok  ${name}`);
   }
 
   /* The tunables live in the database so they can be changed without a deploy.

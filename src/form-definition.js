@@ -27,7 +27,7 @@ LEFT JOIN ${D.forms('Items')} i ON i.GRP_ID = g.GRP_ID AND i.ITM_Active = 1
 WHERE g.FRM_ID = ${config.arms.formId}
   AND g.GRP_Active = 1
   AND parent.GRP_Name = 'CONDEMNATION STATISTICS'
-ORDER BY g.GRP_Order, i.ITM_Order`);
+ORDER BY g.GRP_Order, g.GRP_ID, i.ITM_Order, i.ITM_ID`);
 
   const byGroup = new Map();
   for (const r of rows) {
@@ -69,7 +69,7 @@ WHERE g.FRM_ID = ${config.arms.formId}
   AND g.GRP_Active = 1
   AND parent.GRP_Name = '${parentName.replace(/'/g, "''")}'
   ${clause}
-ORDER BY g.GRP_Order, i.ITM_Order`);
+ORDER BY g.GRP_Order, g.GRP_ID, i.ITM_Order, i.ITM_ID`);
 
   return rows.map((r) => String(r.ITM_Name));
 }
@@ -94,23 +94,20 @@ ORDER BY g.GRP_Order, i.ITM_Order`);
 async function abattoirs() {
   const months = config.arms.abattoirWindowMonths;
 
-  /* The SQL Server original declared @latest and @cut as local variables. MySQL
-   * has no DECLARE outside a stored program, so the cut-off is computed inline
-   * as a scalar subquery - same value, one statement.
+  /* The SQL Server original declared @latest and @cut as local variables; the
+   * cut-off is computed inline as a scalar subquery instead - same value, one
+   * statement.
    *
    * STUFF(... FOR XML PATH('')) was the T-SQL way to concatenate the species
-   * per abattoir; MySQL says that directly with GROUP_CONCAT. Note that
-   * GROUP_CONCAT truncates at group_concat_max_len (1024 by default) - a
-   * species list is a handful of short words, so it is nowhere near that, but
-   * a silent truncation is the sort of thing worth naming rather than meeting
-   * later.
+   * per abattoir, and GROUP_CONCAT the MySQL way; Postgres says string_agg,
+   * which does not truncate.
    *
    * THE SPECIES LIST IS JOINED HERE RATHER THAN READ FROM vw_AbattoirSpecies.
    *
-   * The migration created that view owned by its own one-off account,
+   * On MySQL the migration created that view owned by its own one-off account,
    * `arms_migrate`@`127.0.0.1`, and left it SQL SECURITY DEFINER. That account
-   * is gone, so MySQL evaluates the view as a user that cannot be
-   * authenticated and refuses with
+   * was gone, so MySQL evaluated the view as a user that could not be
+   * authenticated and refused with
    *
    *     Access denied for user 'arms_app'@'127.0.0.1' (using password: YES)
    *
@@ -129,8 +126,8 @@ async function abattoirs() {
   const rows = await query(`
 SELECT o.ORG_ID,
        o.ORG_Name,
-       TRIM(IFNULL(a.ABA_RegistrationNumber,'')) AS RC,
-       (SELECT GROUP_CONCAT(s.SPC_Name ORDER BY s.SPC_Name SEPARATOR ',')
+       TRIM(COALESCE(a.ABA_RegistrationNumber,'')) AS RC,
+       (SELECT string_agg(s.SPC_Name, ',' ORDER BY s.SPC_Name)
           FROM ${D.registry('AbattoirMaster')} am
           JOIN ${D.registry('OrganisationSpecies')} l ON l.ABA_Id = am.ABA_ID
           JOIN ${D.registry('Species')} s ON s.SPC_ID = l.SPC_Id
@@ -142,10 +139,10 @@ WHERE o.ORG_Active = 1
                WHERE f.ORG_ID = o.ORG_ID
                  AND f.FRMD_Status = 'Approved'
                  AND f.FRMD_StartDate >= (
-                     SELECT DATE_SUB(MAX(FRMD_StartDate), INTERVAL ${months} MONTH)
+                     SELECT MAX(FRMD_StartDate) - make_interval(months => ${months})
                        FROM ${D.data('FormData')}
                       WHERE FRMD_Status = 'Approved'))
-ORDER BY o.ORG_Name`);
+ORDER BY o.ORG_Name, o.ORG_ID`);
 
   return {
     rule: `on the register, active, and with an approved return in the ${months} months to the latest return in the database`,
