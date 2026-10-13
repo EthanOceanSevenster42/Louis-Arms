@@ -182,6 +182,35 @@ regular expressions cannot run in that collation, so the code that uses them say
 and comparisons do not ignore trailing spaces the way SQL Server's did, which the disease map's
 trailing-space rules already handle.
 
+## Keeping it current — the nightly sync
+
+The old system still writes every return to the NAHDIS SQL Server. Every night at 02:00 South African
+time `arms-sync.timer` copies them into ARMS's Postgres — returns up to the end of the last complete
+month, so a month appears once it is over. Everything is in `deploy/nightly-sync/`.
+
+| Where | What |
+|---|---|
+| NAHDIS server | `nahdis-export.ps1` at `C:\arms-sync\export.ps1`, run as the local user `arms_sync`. Its SQL login is `db_datareader` on the three ARMS databases and nothing else. `sshd_config` forces that account to run the export and only the export, with key authentication only. |
+| Droplet | `arms-sync.sh` run by `arms-sync.service` / `arms-sync.timer`, as root, with the key `/root/.ssh/arms_sync`. |
+
+Each run fetches the export, checks its SHA-256, and then **refuses to load** if ARMS holds a return the
+export does not — one captured or approved in ARMS itself — or if the export is not the full record.
+Otherwise it backs up the `arms` database (`/root/arms-backups/nightly`, 14 nights kept), loads every
+table in one transaction, restarts ARMS and runs `npm run check`. A failure at any step leaves ARMS as
+it was.
+
+```
+systemctl list-timers arms-sync.timer      # when it runs next
+journalctl -u arms-sync -n 60              # what the last run did
+systemctl start arms-sync                  # run it now
+```
+
+**Once ARMS becomes the place returns are captured,** the guard will start refusing — correctly, because
+replacing the tables would undo that work. At that point the sync has to merge rather than replace,
+and that is a decision about which system is the record, to make before it happens.
+
+---
+
 ## The URLs
 
 Defaults are `HOST=127.0.0.1`, `PORT=3000`. Change either in `.env` and every URL follows,
@@ -424,6 +453,7 @@ evidence.
 | `src/db.js` | Pool, bound-parameter `sql` tag, transactions, schema-qualified names from config, column spellings restored |
 | `src/pg-names.js` | Every column name as the code spells it — Postgres folds them to lower case |
 | `deploy/postgres/legacy-schema.sql` | The recovered tables and `getprovince()`, for an empty database |
+| `deploy/nightly-sync/` | The nightly copy from the NAHDIS server: export, loader, guard, systemd timer |
 | `src/explorer-data.js` | The port of `extract-data.ps1` — five fact sets and the register |
 | `src/form-definition.js` | The Schedule 8 form and abattoir list, from the form tables |
 | `src/disease-map.js` | Reads `disease-name-map.csv`, including the `=KEEP=` guard |

@@ -1,0 +1,13 @@
+[Unit]
+Description=ARMS nightly sync - latest returns from the NAHDIS server into Postgres
+Documentation=file:/srv/arms/deploy/nightly-sync/arms-sync.sh
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /srv/arms/deploy/nightly-sync/arms-sync.sh
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=arms-sync

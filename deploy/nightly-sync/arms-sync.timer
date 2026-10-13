@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the ARMS nightly sync once a day at 02:00 South African time
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Africa/Johannesburg
+# A night missed while the droplet was off runs at the next boot.
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
